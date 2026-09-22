@@ -1,4 +1,4 @@
-const ids = ["scenario","age","spouseAge","income1","income2","retireAge","endAge","pension","retirementPay","child1","child2","education","living","leisure","cash","investments","inflation","returnRate","price","downPayment","interest","loanYears","maintenance","parking","ownerAnnual","purchaseCost","rent","rentFee","rentAnnual","rentGrowth","homeGrowth","saleCost","homeFloor"];
+const ids = ["scenario","age","spouseAge","income1","income2","retireAge","endAge","pension","retirementPay","child1","child2","education","living","leisure","savingsTarget","cash","investments","inflation","returnRate","price","downPayment","interest","loanYears","maintenance","parking","ownerAnnual","purchaseCost","rent","rentFee","rentAnnual","rentGrowth","homeGrowth","saleCost","homeFloor"];
 const initial = Object.fromEntries(ids.map(id => [id, document.getElementById(id).value]));
 const yen = value => `${Math.round(value / 10000).toLocaleString("ja-JP")}万円`;
 const signedYen = value => value < 0 ? `▲${yen(Math.abs(value))}` : yen(value);
@@ -91,12 +91,22 @@ function buildModel() {
   }
 
   const disposable = takeHome(num("income1") * 10000) + takeHome(num("income2") * 10000);
-  const roomPayment = Math.max(0, disposable / 12 * .30 - (num("maintenance") + num("parking")) * 10000 - num("ownerAnnual") * 10000 / 12);
-  const baseLoanRate = pct("interest") + .01;
-  const factor = monthlyPayment(1, baseLoanRate, num("loanYears"));
-  const safeLoan = factor > 0 ? roomPayment / factor : 0;
-  const safePrice = Math.max(0, (safeLoan + down) / (1 + pct("purchaseCost")));
-  return {rows, payment, safePrice, price, scenario};
+  const livingAnnual = num("living") * 120000;
+  const leisureAnnual = num("leisure") * 10000;
+  const savingsAnnual = num("savingsTarget") * 10000;
+  const ownerMonthly = (num("maintenance") + num("parking")) * 10000 + num("ownerAnnual") * 10000 / 12;
+  const priceLine = (ratio, rateAdd, keepSavings) => {
+    const debtLimit = disposable / 12 * ratio;
+    const cashflowLimit = Math.max(0, (disposable - livingAnnual - leisureAnnual - (keepSavings ? savingsAnnual : 0)) / 12 - ownerMonthly);
+    const affordablePayment = Math.max(0, Math.min(debtLimit, cashflowLimit));
+    const factor = monthlyPayment(1, pct("interest") + rateAdd, num("loanYears"));
+    const affordableLoan = factor > 0 ? affordablePayment / factor : 0;
+    return Math.max(0, (affordableLoan + down) / (1 + pct("purchaseCost")));
+  };
+  const roomyPrice = priceLine(.25, .02, true);
+  const safePrice = Math.max(roomyPrice, priceLine(.30, .01, true));
+  const upperPrice = Math.max(safePrice, priceLine(.35, .005, false));
+  return {rows, payment, roomyPrice, safePrice, upperPrice, price, scenario};
 }
 
 function drawChart(canvas, rows, series) {
@@ -122,14 +132,16 @@ function render() {
   const model = buildModel(), rows = model.rows, last = rows.at(-1);
   const shortage = rows.find(r => r.purchaseAssets < 0);
   const minimum = rows.reduce((a,b)=>a.purchaseAssets<b.purchaseAssets?a:b);
-  const priceRatio = model.price / Math.max(1, model.safePrice);
   let verdict = "安心して検討しやすい", state = "", text = "価格目安と生涯収支の両面で検討しやすい試算です。";
-  if (priceRatio > 1) {verdict="条件を確認しながら検討";state="warning";text="入力中の物件価格が標準的な価格目安を上回っています。手元資金の推移と生活条件を確認してください。";}
+  if (model.price <= model.roomyPrice) text="金利上昇と年間貯蓄目標を考慮しても、ゆとりを持ちやすい試算です。";
+  else if (model.price <= model.safePrice) text="生活と年間貯蓄目標を維持しやすい、安心購入ライン内の試算です。";
+  else if (model.price <= model.upperPrice) {verdict="条件を確認しながら検討";state="warning";text="検討上限ライン内です。教育費期や退職時の手元資金を確認しながら検討できる水準です。";}
+  else {verdict="購入条件の見直しをおすすめ";state="danger";text="検討上限ラインを超えています。自己資金、物件価格、生活設計をご確認ください。";}
   if (shortage) {verdict="家計条件を確認しながら検討";state="warning";text=`${shortage.age}歳ごろに手元の金融資産が0円を下回る試算です。住宅純資産を含む比較と、老後の収入・生活費をご確認ください。`;}
-  if (priceRatio > 1.25) {verdict="購入条件の見直しをおすすめ";state="danger";text="価格目安を大きく上回っています。自己資金、物件価格、生活設計をご確認ください。";}
+  if (model.price > model.upperPrice) {verdict="購入条件の見直しをおすすめ";state="danger";text="検討上限ラインを超えています。自己資金、物件価格、生活設計をご確認ください。";}
   const card=document.getElementById("verdictCard");card.className=`verdict-card ${state}`;document.getElementById("verdict").textContent=verdict;document.getElementById("verdictText").textContent=text;
   const scenarioNames={standard:"標準シナリオ",rate:"金利上昇シナリオ",income:"収入減少シナリオ",combined:"複合シナリオ"};document.getElementById("scenarioChip").textContent=scenarioNames[model.scenario];
-  document.getElementById("metricPrice").textContent=yen(model.price);document.getElementById("metricSafe").textContent=yen(model.safePrice);document.getElementById("metricPayment").textContent=`${yen(model.payment)}/月`;document.getElementById("metricMinimum").textContent=`${signedYen(minimum.purchaseAssets)}（${minimum.age}歳）`;
+  document.getElementById("metricPrice").textContent=yen(model.price);document.getElementById("metricRoomy").textContent=yen(model.roomyPrice);document.getElementById("metricSafe").textContent=yen(model.safePrice);document.getElementById("metricUpper").textContent=yen(model.upperPrice);document.getElementById("metricPayment").textContent=`${yen(model.payment)}/月`;document.getElementById("metricMinimum").textContent=`${signedYen(minimum.purchaseAssets)}（${minimum.age}歳）`;
   const badge=document.getElementById("shortageBadge");badge.textContent=shortage?`${shortage.age}歳ごろに手元資金を確認`:`${num("endAge")}歳までプラス`;badge.className=shortage?"warning":"";
   document.getElementById("assetExplanation").innerHTML=shortage?`<strong>この表示について</strong><br>預貯金・投資資産が0円を下回る計算です。住宅そのものがなくなる意味ではありません。「購入と賃貸」で住宅純資産を含む総資産も確認できます。`:`<strong>手元資金について</strong><br>${num("endAge")}歳まで、預貯金・投資資産が0円を下回らない試算です。`;
   document.getElementById("buyTotal").textContent=yen(last.purchaseTotal);document.getElementById("rentTotal").textContent=signedYen(last.rentTotal);
@@ -159,9 +171,9 @@ if (document.modelContext?.registerTool) {
   Promise.resolve(document.modelContext.registerTool({
     name:"get_housing_simulation_summary",
     title:"住宅購入試算の結果を取得",
-    description:"現在画面に表示されている物件価格、価格目安、返済額、総合判定を取得します。",
+    description:"現在画面に表示されている物件価格、3つの購入ライン、返済額、総合判定を取得します。",
     inputSchema:{type:"object",properties:{},additionalProperties:false},
     annotations:{readOnlyHint:true,untrustedContentHint:false},
-    execute(){return {price:document.getElementById("metricPrice").textContent,safePrice:document.getElementById("metricSafe").textContent,monthlyPayment:document.getElementById("metricPayment").textContent,verdict:document.getElementById("verdict").textContent};}
+    execute(){return {price:document.getElementById("metricPrice").textContent,roomyPrice:document.getElementById("metricRoomy").textContent,safePrice:document.getElementById("metricSafe").textContent,upperPrice:document.getElementById("metricUpper").textContent,monthlyPayment:document.getElementById("metricPayment").textContent,verdict:document.getElementById("verdict").textContent};}
   },{signal:lifecycle.signal})).catch(()=>{});
 }
