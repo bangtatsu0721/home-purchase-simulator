@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="住宅購入と賃貸継続を、生涯収支と総資産から比較するシミュレーター">
+  <title>住宅購入安心度シミュレーター</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317365d'/%3E%3Cpath d='M13 31 32 15l19 16v21H38V38H26v14H13Z' fill='%23fff'/%3E%3Cpath d='M45 20v-6h6v11Z' fill='%239ac7aa'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">住宅購入の資金計画</p>
+      <h1>住宅購入安心度シミュレーター</h1>
+    </div>
+    <div class="top-actions">
+      <button class="button ghost" id="resetButton" type="button">初期値に戻す</button>
+      <button class="button primary" id="printButton" type="button">結果を印刷・PDF保存</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="input-panel" aria-label="試算条件">
+      <div class="panel-heading">
+        <div>
+          <span class="step">STEP 1</span>
+          <h2>お客様の条件</h2>
+        </div>
+        <div class="privacy-note"><span></span>入力内容は端末内だけで計算</div>
+      </div>
+
+      <label class="field scenario-field">
+        <span>確認するシナリオ</span>
+        <select id="scenario">
+          <option value="standard">標準</option>
+          <option value="rate">金利上昇</option>
+          <option value="income">収入減少</option>
+          <option value="combined">金利上昇＋収入減少</option>
+        </select>
+      </label>
+
+      <details open>
+        <summary>ご家族・収入</summary>
+        <div class="form-grid">
+          <label class="field"><span>本人年齢</span><div class="unit"><input id="age" type="number" value="34" min="18" max="75"><b>歳</b></div></label>
+          <label class="field"><span>配偶者年齢</span><div class="unit"><input id="spouseAge" type="number" value="34" min="18" max="90"><b>歳</b></div></label>
+          <label class="field"><span>本人年収</span><div class="unit"><input id="income1" type="number" value="700" min="0" step="10"><b>万円</b></div></label>
+          <label class="field"><span>配偶者年収</span><div class="unit"><input id="income2" type="number" value="400" min="0" step="10"><b>万円</b></div></label>
+          <label class="field"><span>退職予定年齢</span><div class="unit"><input id="retireAge" type="number" value="65" min="50" max="80"><b>歳</b></div></label>
+          <label class="field"><span>試算終了年齢</span><div class="unit"><input id="endAge" type="number" value="90" min="70" max="100"><b>歳</b></div></label>
+          <label class="field"><span>年金手取り年額</span><div class="unit"><input id="pension" type="number" value="240" min="0" step="10"><b>万円</b></div></label>
+          <label class="field"><span>退職金</span><div class="unit"><input id="retirementPay" type="number" value="1000" min="0" step="50"><b>万円</b></div></label>
+        </div>
+      </details>
+
+      <details>
+        <summary>お子さま・教育</summary>
+        <div class="form-grid">
+          <label class="field"><span>第1子の現在年齢</span><div class="unit"><input id="child1" type="number" value="3" min="-1" max="25"><b>歳</b></div></label>
+          <label class="field"><span>第2子の現在年齢</span><div class="unit"><input id="child2" type="number" value="-1" min="-1" max="25"><b>歳</b></div></label>
+          <label class="field wide"><span>教育プラン</span><select id="education"><option value="public">公立中心</option><option value="university">大学のみ私立</option><option value="high">高校から私立</option><option value="middle">中学から私立</option></select></label>
+        </div>
+      </details>
+
+      <details>
+        <summary>生活費・資産</summary>
+        <div class="form-grid">
+          <label class="field"><span>毎月生活費</span><div class="unit"><input id="living" type="number" value="27" min="0" step="1"><b>万円</b></div></label>
+          <label class="field"><span>年間旅行・その他</span><div class="unit"><input id="leisure" type="number" value="55" min="0" step="5"><b>万円</b></div></label>
+          <label class="field"><span>現在の預金</span><div class="unit"><input id="cash" type="number" value="800" min="0" step="50"><b>万円</b></div></label>
+          <label class="field"><span>現在の投資資産</span><div class="unit"><input id="investments" type="number" value="200" min="0" step="50"><b>万円</b></div></label>
+          <label class="field"><span>物価上昇率 <button class="help" data-help="生活費・旅行費などが毎年増える想定率です。">?</button></span><div class="unit"><input id="inflation" type="number" value="1.0" min="0" max="5" step="0.1"><b>%</b></div></label>
+          <label class="field"><span>運用利回り <button class="help" data-help="年初のプラスの金融資産に対する想定運用益です。元本保証ではありません。">?</button></span><div class="unit"><input id="returnRate" type="number" value="1.0" min="0" max="8" step="0.1"><b>%</b></div></label>
+        </div>
+      </details>
+
+      <details open>
+        <summary>購入する場合</summary>
+        <div class="form-grid">
+          <label class="field"><span>物件価格</span><div class="unit"><input id="price" type="number" value="6500" min="500" step="50"><b>万円</b></div></label>
+          <label class="field"><span>自己資金</span><div class="unit"><input id="downPayment" type="number" value="500" min="0" step="50"><b>万円</b></div></label>
+          <label class="field"><span>当初金利</span><div class="unit"><input id="interest" type="number" value="0.8" min="0" max="10" step="0.05"><b>%</b></div></label>
+          <label class="field"><span>返済期間</span><div class="unit"><input id="loanYears" type="number" value="40" min="5" max="50"><b>年</b></div></label>
+          <label class="field"><span>管理費・修繕積立金</span><div class="unit"><input id="maintenance" type="number" value="2.3" min="0" step="0.1"><b>万円/月</b></div></label>
+          <label class="field"><span>駐車場・その他住宅費</span><div class="unit"><input id="parking" type="number" value="1.5" min="0" step="0.1"><b>万円/月</b></div></label>
+          <label class="field"><span>固定資産税・保険</span><div class="unit"><input id="ownerAnnual" type="number" value="21" min="0" step="1"><b>万円/年</b></div></label>
+          <label class="field"><span>諸費用率</span><div class="unit"><input id="purchaseCost" type="number" value="4" min="0" max="15" step="0.5"><b>%</b></div></label>
+        </div>
+      </details>
+
+      <details>
+        <summary>賃貸との比較</summary>
+        <div class="form-grid">
+          <label class="field"><span>現在の家賃</span><div class="unit"><input id="rent" type="number" value="15" min="0" step="0.5"><b>万円/月</b></div></label>
+          <label class="field"><span>共益費・管理費</span><div class="unit"><input id="rentFee" type="number" value="1" min="0" step="0.1"><b>万円/月</b></div></label>
+          <label class="field"><span>更新・保険等</span><div class="unit"><input id="rentAnnual" type="number" value="10" min="0" step="1"><b>万円/年</b></div></label>
+          <label class="field"><span>家賃上昇率</span><div class="unit"><input id="rentGrowth" type="number" value="1" min="0" max="5" step="0.1"><b>%</b></div></label>
+          <label class="field"><span>住宅価格の年間変化率</span><div class="unit"><input id="homeGrowth" type="number" value="-1.5" min="-10" max="10" step="0.1"><b>%</b></div></label>
+          <label class="field"><span>売却費用率</span><div class="unit"><input id="saleCost" type="number" value="4" min="0" max="15" step="0.5"><b>%</b></div></label>
+          <label class="field wide"><span>住宅価値の下限</span><div class="unit"><input id="homeFloor" type="number" value="30" min="0" max="100" step="5"><b>購入価格の%</b></div></label>
+        </div>
+      </details>
+    </aside>
+
+    <section class="results-panel">
+      <div class="result-heading">
+        <div><span class="step">STEP 2</span><h2>試算結果</h2></div>
+        <div class="scenario-chip" id="scenarioChip">標準シナリオ</div>
+      </div>
+
+      <div class="verdict-card" id="verdictCard">
+        <div><span class="verdict-label">総合判定</span><strong id="verdict">安心して検討しやすい</strong></div>
+        <p id="verdictText"></p>
+      </div>
+
+      <div class="metrics">
+        <article><span>入力中の物件価格</span><strong id="metricPrice"></strong></article>
+        <article><span>標準的な価格目安</span><strong id="metricSafe"></strong></article>
+        <article><span>毎月ローン返済額</span><strong id="metricPayment"></strong></article>
+        <article><span>手元資金の最低額</span><strong id="metricMinimum"></strong></article>
+      </div>
+
+      <nav class="tabs" aria-label="結果の表示切替">
+        <button class="tab active" data-tab="outlook" type="button">将来の資産</button>
+        <button class="tab" data-tab="compare" type="button">購入と賃貸</button>
+        <button class="tab" data-tab="cashflow" type="button">生涯収支</button>
+      </nav>
+
+      <section class="tab-panel active" id="outlook">
+        <div class="section-title"><div><h3>年齢別の金融資産</h3><p>預貯金・投資資産の推移。住宅の価値は含みません。</p></div><span id="shortageBadge"></span></div>
+        <div class="chart-wrap"><canvas id="assetChart" role="img" aria-label="年齢別の金融資産グラフ"></canvas></div>
+        <div class="explain-box" id="assetExplanation"></div>
+      </section>
+
+      <section class="tab-panel" id="compare">
+        <div class="section-title"><div><h3>購入と賃貸の総資産比較</h3><p>購入は手元資金と住宅純資産、賃貸は手元資金で比較します。</p></div></div>
+        <div class="compare-cards">
+          <article class="buy"><span>購入した場合</span><strong id="buyTotal"></strong><small>金融資産＋住宅純資産</small></article>
+          <div class="versus">VS</div>
+          <article class="rent"><span>賃貸を続けた場合</span><strong id="rentTotal"></strong><small>金融資産</small></article>
+        </div>
+        <div class="chart-wrap"><canvas id="compareChart" role="img" aria-label="購入と賃貸の総資産比較グラフ"></canvas></div>
+        <div class="age-table-wrap"><table><thead><tr><th>年齢</th><th>購入：金融資産</th><th>住宅純資産</th><th>購入：総資産</th><th>賃貸：金融資産</th></tr></thead><tbody id="compareTable"></tbody></table></div>
+        <div class="explain-box neutral"><strong>住宅純資産とは</strong><p>想定売却価格から売却費用と住宅ローン残高を差し引いた金額です。住宅はすぐに現金化できず、売却価格や期間も保証されません。</p></div>
+      </section>
+
+      <section class="tab-panel" id="cashflow">
+        <div class="section-title"><div><h3>生涯キャッシュフロー</h3><p>各年の収入・支出と期末金融資産を確認できます。</p></div></div>
+        <div class="table-wrap"><table><thead><tr><th>年齢</th><th>手取り・年金</th><th>生活・旅行</th><th>教育費</th><th>購入の住居費</th><th>年間収支</th><th>期末金融資産</th></tr></thead><tbody id="cashflowTable"></tbody></table></div>
+      </section>
+
+      <footer class="disclaimer">本試算は入力条件に基づく概算です。融資承認、税額、将来の収支、住宅の売却価格を保証するものではありません。</footer>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
