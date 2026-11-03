@@ -1,4 +1,4 @@
-const ids = ["scenario","spouseStatus","age","spouseAge","income1","income2","retireAge","endAge","pension","retirementPay","child1","child2","education","living","leisure","savingsTarget","cash","investments","inflation","returnRate","price","downPayment","interest","loanYears","maintenance","parking","ownerAnnual","purchaseCost","rent","rentFee","rentAnnual","rentGrowth","homeGrowth","saleCost","homeFloor"];
+const ids = ["scenario","spouseStatus","age","spouseAge","income1","income2","retireAge","endAge","pension","retirementPay","child1","child2","education","living","leisure","savingsTarget","cash","investments","inflation","returnRate","price","downPayment","interest","screeningInterest","loanYears","maintenance","parking","ownerAnnual","purchaseCost","rent","rentFee","rentAnnual","rentGrowth","homeGrowth","saleCost","homeFloor"];
 const initial = Object.fromEntries(ids.map(id => [id, document.getElementById(id).value]));
 const yen = value => `${Math.round(value / 10000).toLocaleString("ja-JP")}万円`;
 const signedYen = value => value < 0 ? `▲${yen(Math.abs(value))}` : yen(value);
@@ -102,7 +102,7 @@ function buildModel() {
   }
 
   const grossAnnual = (num("income1") + (hasSpouse() ? num("income2") : 0)) * 10000;
-  const screeningRate = .033;
+  const screeningRate = pct("screeningInterest");
   const priceLine = ratio => {
     // 額面年収 × 返済負担率 ÷ 12 ÷ 返済係数。
     // 返済係数は、審査金利3.3％・入力された返済期間で100万円を借りた場合の月返済額。
@@ -149,6 +149,10 @@ function render() {
   const card=document.getElementById("verdictCard");card.className=`verdict-card ${state}`;document.getElementById("verdict").textContent=verdict;document.getElementById("verdictText").textContent=text;
   const scenarioNames={standard:"標準シナリオ",rate:"金利上昇シナリオ",income:"収入減少シナリオ",combined:"複合シナリオ"};document.getElementById("scenarioChip").textContent=scenarioNames[model.scenario];
   document.getElementById("metricPrice").textContent=yen(model.price);document.getElementById("metricRoomy").textContent=yen(model.roomyPrice);document.getElementById("metricSafe").textContent=yen(model.safePrice);document.getElementById("metricUpper").textContent=yen(model.upperPrice);document.getElementById("metricPayment").textContent=`${yen(model.payment)}/月`;document.getElementById("metricMinimum").textContent=`${signedYen(minimum.purchaseAssets)}（${minimum.age}歳）`;
+  const screeningRateLabel = num("screeningInterest").toLocaleString("ja-JP", {maximumFractionDigits:2});
+  document.getElementById("roomyRule").textContent=`額面年収30％・審査金利${screeningRateLabel}％`;
+  document.getElementById("safeRule").textContent=`額面年収35％・審査金利${screeningRateLabel}％`;
+  document.getElementById("upperRule").textContent=`額面年収40％・審査金利${screeningRateLabel}％`;
   const badge=document.getElementById("shortageBadge");badge.textContent=shortage?`${shortage.age}歳ごろに手元資金を確認`:`${num("endAge")}歳までプラス`;badge.className=shortage?"warning":"";
   document.getElementById("assetExplanation").innerHTML=shortage?`<strong>この表示について</strong><br>預貯金・投資資産が0円を下回る計算です。住宅そのものがなくなる意味ではありません。「購入と賃貸」で住宅純資産を含む総資産も確認できます。`:`<strong>手元資金について</strong><br>${num("endAge")}歳まで、預貯金・投資資産が0円を下回らない試算です。`;
   document.getElementById("buyTotal").textContent=yen(last.purchaseTotal);document.getElementById("rentTotal").textContent=signedYen(last.rentTotal);
