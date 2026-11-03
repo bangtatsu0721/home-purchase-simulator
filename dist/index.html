@@ -83,6 +83,7 @@
           <label class="field"><span>物件価格</span><div class="unit"><input id="price" type="number" value="6500" min="500" step="50"><b>万円</b></div></label>
           <label class="field"><span>自己資金</span><div class="unit"><input id="downPayment" type="number" value="500" min="0" step="50"><b>万円</b></div></label>
           <label class="field"><span>当初金利</span><div class="unit"><input id="interest" type="number" value="0.8" min="0" max="10" step="0.05"><b>%</b></div></label>
+          <label class="field"><span>審査金利</span><div class="unit"><input id="screeningInterest" type="number" value="3.3" min="0" max="15" step="0.1"><b>%</b></div></label>
           <label class="field"><span>返済期間</span><div class="unit"><input id="loanYears" type="number" value="40" min="5" max="50"><b>年</b></div></label>
           <label class="field"><span>管理費・修繕積立金</span><div class="unit"><input id="maintenance" type="number" value="2.3" min="0" step="0.1"><b>万円/月</b></div></label>
           <label class="field"><span>駐車場・その他住宅費</span><div class="unit"><input id="parking" type="number" value="1.5" min="0" step="0.1"><b>万円/月</b></div></label>
@@ -118,9 +119,9 @@
 
       <div class="metrics">
         <article><span>入力中の物件価格</span><strong id="metricPrice"></strong></article>
-        <article class="price-line roomy"><span>ゆとり購入ライン</span><strong id="metricRoomy"></strong><small>額面年収30％・審査金利3.3％</small></article>
-        <article class="price-line safe"><span>安心購入ライン</span><strong id="metricSafe"></strong><small>額面年収35％・審査金利3.3％</small></article>
-        <article class="price-line upper"><span>検討上限ライン</span><strong id="metricUpper"></strong><small>額面年収40％・審査金利3.3％</small></article>
+        <article class="price-line roomy"><span>ゆとり購入ライン</span><strong id="metricRoomy"></strong><small id="roomyRule">額面年収30％・審査金利3.3％</small></article>
+        <article class="price-line safe"><span>安心購入ライン</span><strong id="metricSafe"></strong><small id="safeRule">額面年収35％・審査金利3.3％</small></article>
+        <article class="price-line upper"><span>検討上限ライン</span><strong id="metricUpper"></strong><small id="upperRule">額面年収40％・審査金利3.3％</small></article>
         <article><span>毎月ローン返済額</span><strong id="metricPayment"></strong></article>
         <article><span>手元資金の最低額</span><strong id="metricMinimum"></strong></article>
       </div>
@@ -159,6 +160,6 @@
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=20261103-gross-screening"></script>
+  <script src="app.js?v=20261103-editable-screening-rate"></script>
 </body>
 </html>
