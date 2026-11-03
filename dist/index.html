@@ -58,8 +58,8 @@
       <details>
         <summary>お子さま・教育</summary>
         <div class="form-grid">
-          <label class="field"><span>第1子の現在年齢</span><div class="unit"><input id="child1" type="number" value="3" min="-1" max="25"><b>歳</b></div></label>
-          <label class="field"><span>第2子の現在年齢</span><div class="unit"><input id="child2" type="number" value="-1" min="-1" max="25"><b>歳</b></div></label>
+          <label class="field"><span>第1子の現在年齢（-1＝なし）</span><div class="unit"><input id="child1" type="number" value="-1" min="-1" max="25"><b>歳</b></div></label>
+          <label class="field"><span>第2子の現在年齢（-1＝なし）</span><div class="unit"><input id="child2" type="number" value="-1" min="-1" max="25"><b>歳</b></div></label>
           <label class="field wide"><span>教育プラン</span><select id="education"><option value="public">公立中心</option><option value="university">大学のみ私立</option><option value="high">高校から私立</option><option value="middle">中学から私立</option></select></label>
         </div>
       </details>
@@ -160,6 +160,6 @@
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=20261103-cashflow-fix"></script>
+  <script src="app.js?v=20261103-no-child-default"></script>
 </body>
 </html>
