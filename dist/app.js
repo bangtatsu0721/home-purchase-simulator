@@ -1,10 +1,21 @@
-const ids = ["scenario","age","spouseAge","income1","income2","retireAge","endAge","pension","retirementPay","child1","child2","education","living","leisure","savingsTarget","cash","investments","inflation","returnRate","price","downPayment","interest","loanYears","maintenance","parking","ownerAnnual","purchaseCost","rent","rentFee","rentAnnual","rentGrowth","homeGrowth","saleCost","homeFloor"];
+const ids = ["scenario","spouseStatus","age","spouseAge","income1","income2","retireAge","endAge","pension","retirementPay","child1","child2","education","living","leisure","savingsTarget","cash","investments","inflation","returnRate","price","downPayment","interest","loanYears","maintenance","parking","ownerAnnual","purchaseCost","rent","rentFee","rentAnnual","rentGrowth","homeGrowth","saleCost","homeFloor"];
 const initial = Object.fromEntries(ids.map(id => [id, document.getElementById(id).value]));
 const yen = value => `${Math.round(value / 10000).toLocaleString("ja-JP")}万円`;
 const signedYen = value => value < 0 ? `▲${yen(Math.abs(value))}` : yen(value);
 const num = id => Number(document.getElementById(id).value || 0);
 const pct = id => num(id) / 100;
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+const hasSpouse = () => document.getElementById("spouseStatus").value === "yes";
+
+function syncSpouseFields() {
+  const enabled = hasSpouse();
+  ["spouseAge", "income2"].forEach(id => {
+    const input = document.getElementById(id);
+    input.disabled = !enabled;
+    input.setAttribute("aria-disabled", String(!enabled));
+    input.closest(".field").style.opacity = enabled ? "1" : ".45";
+  });
+}
 
 function takeHome(gross) {
   if (gross <= 0) return 0;
@@ -59,7 +70,7 @@ function buildModel() {
     const currentAge = age + y;
     const incomeFactor = Math.pow(1.01, y);
     let gross1 = num("income1") * 10000 * incomeFactor;
-    let gross2 = num("income2") * 10000 * incomeFactor;
+    let gross2 = (hasSpouse() ? num("income2") : 0) * 10000 * incomeFactor;
     if (incomeStress && y >= 3 && y < 6) { gross1 *= .7; gross2 *= .7; }
     const workingIncome = takeHome(gross1) + takeHome(gross2);
     const income = currentAge < retireAge ? workingIncome : num("pension") * 10000;
@@ -90,7 +101,7 @@ function buildModel() {
     rows.push({age: currentAge, income, livingLeisure: living + leisure, education, purchaseHousing, purchaseAnnual, purchaseAssets, rentHousing, rentAnnual, rentAssets, homeValue, loanBalance, homeEquity, purchaseTotal: purchaseAssets + homeEquity, rentTotal: rentAssets});
   }
 
-  const disposable = takeHome(num("income1") * 10000) + takeHome(num("income2") * 10000);
+  const disposable = takeHome(num("income1") * 10000) + (hasSpouse() ? takeHome(num("income2") * 10000) : 0);
   const livingAnnual = num("living") * 120000;
   const leisureAnnual = num("leisure") * 10000;
   const savingsAnnual = num("savingsTarget") * 10000;
@@ -150,12 +161,13 @@ function render() {
   requestAnimationFrame(()=>{drawChart(document.getElementById("assetChart"),rows,[{label:"手元の金融資産",color:"#2f75b5",get:r=>r.purchaseAssets}]);drawChart(document.getElementById("compareChart"),rows,[{label:"購入：総資産",color:"#2f75b5",get:r=>r.purchaseTotal},{label:"賃貸：金融資産",color:"#7f8fa6",get:r=>r.rentTotal}])});
 }
 
-let timer; ids.forEach(id=>document.getElementById(id).addEventListener("input",()=>{clearTimeout(timer);timer=setTimeout(render,60)}));
+let timer; ids.forEach(id=>document.getElementById(id).addEventListener("input",()=>{if(id==="spouseStatus")syncSpouseFields();clearTimeout(timer);timer=setTimeout(render,60)}));
 document.querySelectorAll(".tab").forEach(button=>button.addEventListener("click",()=>{document.querySelectorAll(".tab,.tab-panel").forEach(x=>x.classList.remove("active"));button.classList.add("active");document.getElementById(button.dataset.tab).classList.add("active");render()}));
 document.querySelectorAll(".help").forEach(button=>button.addEventListener("click",e=>{e.preventDefault();const toast=document.getElementById("toast");toast.textContent=button.dataset.help;toast.classList.add("show");setTimeout(()=>toast.classList.remove("show"),3500)}));
 document.getElementById("printButton").addEventListener("click",()=>window.print());
-document.getElementById("resetButton").addEventListener("click",()=>{ids.forEach(id=>document.getElementById(id).value=initial[id]);render()});
+document.getElementById("resetButton").addEventListener("click",()=>{ids.forEach(id=>document.getElementById(id).value=initial[id]);syncSpouseFields();render()});
 window.addEventListener("resize",()=>{clearTimeout(timer);timer=setTimeout(render,120)});
+syncSpouseFields();
 render();
 
 if (document.modelContext?.registerTool) {
