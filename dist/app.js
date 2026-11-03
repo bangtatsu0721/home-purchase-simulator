@@ -101,23 +101,18 @@ function buildModel() {
     rows.push({age: currentAge, income, livingLeisure: living + leisure, education, purchaseHousing, purchaseAnnual, purchaseAssets, rentHousing, rentAnnual, rentAssets, homeValue, loanBalance, homeEquity, purchaseTotal: purchaseAssets + homeEquity, rentTotal: rentAssets});
   }
 
-  const disposable = takeHome(num("income1") * 10000) + (hasSpouse() ? takeHome(num("income2") * 10000) : 0);
-  const livingAnnual = num("living") * 120000;
-  const leisureAnnual = num("leisure") * 10000;
-  const savingsAnnual = num("savingsTarget") * 10000;
-  const ownerMonthly = (num("maintenance") + num("parking")) * 10000 + num("ownerAnnual") * 10000 / 12;
-  const priceLine = (ratio, rateAdd) => {
-    // 購入ラインは表示どおり「手取りに対する総住居費の割合」で算出する。
-    // 生活費・教育費・貯蓄目標は、生涯収支と総合判定で別途確認する。
-    const totalHousingLimit = disposable / 12 * ratio;
-    const affordablePayment = Math.max(0, totalHousingLimit - ownerMonthly);
-    const factor = monthlyPayment(1, pct("interest") + rateAdd, num("loanYears"));
-    const affordableLoan = factor > 0 ? affordablePayment / factor : 0;
-    return Math.max(0, (affordableLoan + down) / (1 + pct("purchaseCost")));
+  const grossAnnual = (num("income1") + (hasSpouse() ? num("income2") : 0)) * 10000;
+  const screeningRate = .033;
+  const priceLine = ratio => {
+    // 額面年収 × 返済負担率 ÷ 12 ÷ 返済係数。
+    // 返済係数は、審査金利3.3％・入力された返済期間で100万円を借りた場合の月返済額。
+    const monthlyRepaymentLimit = grossAnnual * ratio / 12;
+    const coefficientPerMillion = monthlyPayment(1_000_000, screeningRate, num("loanYears"));
+    return coefficientPerMillion > 0 ? monthlyRepaymentLimit / coefficientPerMillion * 1_000_000 : 0;
   };
-  const roomyPrice = priceLine(.25, .02);
-  const safePrice = Math.max(roomyPrice, priceLine(.30, .01));
-  const upperPrice = Math.max(safePrice, priceLine(.35, .005));
+  const roomyPrice = priceLine(.30);
+  const safePrice = priceLine(.35);
+  const upperPrice = priceLine(.40);
   return {rows, payment, roomyPrice, safePrice, upperPrice, price, scenario};
 }
 
