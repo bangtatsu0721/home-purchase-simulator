@@ -43,10 +43,11 @@
       <details open>
         <summary>ご家族・収入</summary>
         <div class="form-grid">
+          <label class="field wide"><span>配偶者</span><select id="spouseStatus"><option value="yes">あり</option><option value="no">なし</option></select></label>
           <label class="field"><span>本人年齢</span><div class="unit"><input id="age" type="number" value="34" min="18" max="75"><b>歳</b></div></label>
-          <label class="field"><span>配偶者年齢</span><div class="unit"><input id="spouseAge" type="number" value="34" min="18" max="90"><b>歳</b></div></label>
+          <label class="field spouse-field"><span>配偶者年齢</span><div class="unit"><input id="spouseAge" type="number" value="34" min="18" max="90"><b>歳</b></div></label>
           <label class="field"><span>本人年収</span><div class="unit"><input id="income1" type="number" value="700" min="0" step="10"><b>万円</b></div></label>
-          <label class="field"><span>配偶者年収</span><div class="unit"><input id="income2" type="number" value="400" min="0" step="10"><b>万円</b></div></label>
+          <label class="field spouse-field"><span>配偶者年収</span><div class="unit"><input id="income2" type="number" value="400" min="0" step="10"><b>万円</b></div></label>
           <label class="field"><span>退職予定年齢</span><div class="unit"><input id="retireAge" type="number" value="65" min="50" max="80"><b>歳</b></div></label>
           <label class="field"><span>試算終了年齢</span><div class="unit"><input id="endAge" type="number" value="90" min="70" max="100"><b>歳</b></div></label>
           <label class="field"><span>年金手取り年額</span><div class="unit"><input id="pension" type="number" value="240" min="0" step="10"><b>万円</b></div></label>
