@@ -74,7 +74,11 @@ function buildModel() {
     if (incomeStress && y >= 3 && y < 6) { gross1 *= .7; gross2 *= .7; }
     const workingIncome = takeHome(gross1) + takeHome(gross2);
     const income = currentAge < retireAge ? workingIncome : num("pension") * 10000;
-    const livingBase = currentAge < retireAge ? num("living") * 120000 : num("living") * 120000 * .78;
+    // 「毎月生活費」は現在の住居費込み。現在家賃を除いた生活費本体だけを
+    // 購入・賃貸それぞれの住居費に加えることで、住居費の二重計上を防ぐ。
+    const currentHousing = (num("rent") + num("rentFee")) * 120000 + num("rentAnnual") * 10000;
+    const nonHousingLiving = Math.max(0, num("living") * 120000 - currentHousing);
+    const livingBase = currentAge < retireAge ? nonHousingLiving : nonHousingLiving * .78;
     const living = livingBase * Math.pow(1 + inflation, y);
     const leisure = num("leisure") * 10000 * (currentAge < retireAge ? 1 : .7) * Math.pow(1 + inflation, y);
     const education = childCost(num("child1") < 0 ? -1 : num("child1") + y, document.getElementById("education").value) + childCost(num("child2") < 0 ? -1 : num("child2") + y, document.getElementById("education").value);
@@ -94,8 +98,10 @@ function buildModel() {
     const mortgageCredit = y >= 1 && y <= 13 ? Math.min(loanBalance, 45_000_000) * .007 : 0;
     const purchaseAnnual = income + retirementPay + mortgageCredit - living - leisure - education - purchaseHousing;
     const rentAnnual = income + retirementPay - living - leisure - education - rentHousing;
-    purchaseAssets += purchaseAnnual + Math.max(0, purchaseAssets) * investmentReturn;
-    rentAssets += rentAnnual + Math.max(0, rentAssets) * investmentReturn;
+    // 金融資産は0円を下限とする。年間赤字は生涯収支で確認し、
+    // 現実に存在しない「マイナス金融資産」を90歳まで累積させない。
+    purchaseAssets = Math.max(0, purchaseAssets + purchaseAnnual + Math.max(0, purchaseAssets) * investmentReturn);
+    rentAssets = Math.max(0, rentAssets + rentAnnual + Math.max(0, rentAssets) * investmentReturn);
     const homeValue = Math.max(price * pct("homeFloor"), price * Math.pow(1 + pct("homeGrowth"), y));
     const homeEquity = Math.max(0, homeValue * (1 - pct("saleCost")) - loanBalance);
     rows.push({age: currentAge, income, livingLeisure: living + leisure, education, purchaseHousing, purchaseAnnual, purchaseAssets, rentHousing, rentAnnual, rentAssets, homeValue, loanBalance, homeEquity, purchaseTotal: purchaseAssets + homeEquity, rentTotal: rentAssets});
@@ -137,7 +143,7 @@ function drawChart(canvas, rows, series) {
 
 function render() {
   const model = buildModel(), rows = model.rows, last = rows.at(-1);
-  const shortage = rows.find(r => r.purchaseAssets < 0);
+  const shortage = rows.find(r => r.purchaseAssets === 0 && r.purchaseAnnual < 0);
   const minimum = rows.reduce((a,b)=>a.purchaseAssets<b.purchaseAssets?a:b);
   let verdict = "ゆとりを持って検討しやすい", state = "", text = "ゆとり購入ライン内の物件価格です。";
   if (model.price <= model.roomyPrice) {
@@ -163,7 +169,7 @@ function render() {
   document.getElementById("safeRule").textContent=`額面年収35％・審査金利${screeningRateLabel}％`;
   document.getElementById("upperRule").textContent=`額面年収40％・審査金利${screeningRateLabel}％`;
   const badge=document.getElementById("shortageBadge");badge.textContent=shortage?`${shortage.age}歳ごろに手元資金を確認`:`${num("endAge")}歳までプラス`;badge.className=shortage?"warning":"";
-  document.getElementById("assetExplanation").innerHTML=shortage?`<strong>この表示について</strong><br>預貯金・投資資産が0円を下回る計算です。住宅そのものがなくなる意味ではありません。「購入と賃貸」で住宅純資産を含む総資産も確認できます。`:`<strong>手元資金について</strong><br>${num("endAge")}歳まで、預貯金・投資資産が0円を下回らない試算です。`;
+  document.getElementById("assetExplanation").innerHTML=shortage?`<strong>収支確認の目安</strong><br>${shortage.age}歳ごろに手元資金が0円となる試算です。マイナス資産としては累積せず、赤字になる年度は「生涯収支」で確認できます。`:`<strong>手元資金について</strong><br>${num("endAge")}歳まで、預貯金・投資資産を維持できる試算です。`;
   document.getElementById("buyTotal").textContent=yen(last.purchaseTotal);document.getElementById("rentTotal").textContent=signedYen(last.rentTotal);
   const ages=[65,75,85,num("endAge")].filter((v,i,a)=>v>=num("age")&&v<=num("endAge")&&a.indexOf(v)===i);document.getElementById("compareTable").innerHTML=ages.map(a=>{const r=rows.find(x=>x.age===a)||last;return `<tr><td>${a}歳</td><td class="${r.purchaseAssets<0?'negative':''}">${signedYen(r.purchaseAssets)}</td><td>${yen(r.homeEquity)}</td><td class="${r.purchaseTotal<0?'negative':''}">${signedYen(r.purchaseTotal)}</td><td class="${r.rentAssets<0?'negative':''}">${signedYen(r.rentAssets)}</td></tr>`}).join("");
   document.getElementById("cashflowTable").innerHTML=rows.map(r=>`<tr><td>${r.age}歳</td><td>${yen(r.income)}</td><td>${yen(r.livingLeisure)}</td><td>${yen(r.education)}</td><td>${yen(r.purchaseHousing)}</td><td class="${r.purchaseAnnual<0?'negative':''}">${signedYen(r.purchaseAnnual)}</td><td class="${r.purchaseAssets<0?'negative':''}">${signedYen(r.purchaseAssets)}</td></tr>`).join("");
