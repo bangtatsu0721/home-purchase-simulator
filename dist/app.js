@@ -139,13 +139,22 @@ function render() {
   const model = buildModel(), rows = model.rows, last = rows.at(-1);
   const shortage = rows.find(r => r.purchaseAssets < 0);
   const minimum = rows.reduce((a,b)=>a.purchaseAssets<b.purchaseAssets?a:b);
-  let verdict = "安心して検討しやすい", state = "", text = "価格目安と生涯収支の両面で検討しやすい試算です。";
-  if (model.price <= model.roomyPrice) text="金利上昇と年間貯蓄目標を考慮しても、ゆとりを持ちやすい試算です。";
-  else if (model.price <= model.safePrice) text="生活と年間貯蓄目標を維持しやすい、安心購入ライン内の試算です。";
-  else if (model.price <= model.upperPrice) {verdict="条件を確認しながら検討";state="warning";text="検討上限ライン内です。教育費期や退職時の手元資金を確認しながら検討できる水準です。";}
-  else {verdict="購入条件の見直しをおすすめ";state="danger";text="検討上限ラインを超えています。自己資金、物件価格、生活設計をご確認ください。";}
-  if (shortage) {verdict="家計条件を確認しながら検討";state="warning";text=`${shortage.age}歳ごろに手元の金融資産が0円を下回る試算です。住宅純資産を含む比較と、老後の収入・生活費をご確認ください。`;}
-  if (model.price > model.upperPrice) {verdict="購入条件の見直しをおすすめ";state="danger";text="検討上限ラインを超えています。自己資金、物件価格、生活設計をご確認ください。";}
+  let verdict = "ゆとりを持って検討しやすい", state = "", text = "ゆとり購入ライン内の物件価格です。";
+  if (model.price <= model.roomyPrice) {
+    verdict="ゆとりを持って検討しやすい";
+    text="額面年収30％のゆとり購入ライン内です。";
+  } else if (model.price <= model.safePrice) {
+    verdict="安心して検討しやすい";
+    text="額面年収35％の安心購入ライン内です。";
+  } else if (model.price <= model.upperPrice) {
+    verdict="条件を確認しながら検討";
+    state="warning";
+    text="額面年収40％の検討上限ライン内です。";
+  } else {
+    verdict="購入条件の見直しをおすすめ";
+    state="danger";
+    text="検討上限ラインを超えています。自己資金や物件価格をご確認ください。";
+  }
   const card=document.getElementById("verdictCard");card.className=`verdict-card ${state}`;document.getElementById("verdict").textContent=verdict;document.getElementById("verdictText").textContent=text;
   const scenarioNames={standard:"標準シナリオ",rate:"金利上昇シナリオ",income:"収入減少シナリオ",combined:"複合シナリオ"};document.getElementById("scenarioChip").textContent=scenarioNames[model.scenario];
   document.getElementById("metricPrice").textContent=yen(model.price);document.getElementById("metricRoomy").textContent=yen(model.roomyPrice);document.getElementById("metricSafe").textContent=yen(model.safePrice);document.getElementById("metricUpper").textContent=yen(model.upperPrice);document.getElementById("metricPayment").textContent=`${yen(model.payment)}/月`;document.getElementById("metricMinimum").textContent=`${signedYen(minimum.purchaseAssets)}（${minimum.age}歳）`;
