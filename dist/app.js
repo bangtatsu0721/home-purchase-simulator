@@ -161,7 +161,7 @@ function render() {
   requestAnimationFrame(()=>{drawChart(document.getElementById("assetChart"),rows,[{label:"手元の金融資産",color:"#2f75b5",get:r=>r.purchaseAssets}]);drawChart(document.getElementById("compareChart"),rows,[{label:"購入：総資産",color:"#2f75b5",get:r=>r.purchaseTotal},{label:"賃貸：金融資産",color:"#7f8fa6",get:r=>r.rentTotal}])});
 }
 
-let timer; ids.forEach(id=>document.getElementById(id).addEventListener("input",()=>{if(id==="spouseStatus")syncSpouseFields();clearTimeout(timer);timer=setTimeout(render,60)}));
+let timer; ids.forEach(id=>{const element=document.getElementById(id);const update=()=>{if(id==="spouseStatus")syncSpouseFields();clearTimeout(timer);timer=setTimeout(render,60)};element.addEventListener("input",update);if(element.tagName==="SELECT")element.addEventListener("change",update)});
 document.querySelectorAll(".tab").forEach(button=>button.addEventListener("click",()=>{document.querySelectorAll(".tab,.tab-panel").forEach(x=>x.classList.remove("active"));button.classList.add("active");document.getElementById(button.dataset.tab).classList.add("active");render()}));
 document.querySelectorAll(".help").forEach(button=>button.addEventListener("click",e=>{e.preventDefault();const toast=document.getElementById("toast");toast.textContent=button.dataset.help;toast.classList.add("show");setTimeout(()=>toast.classList.remove("show"),3500)}));
 document.getElementById("printButton").addEventListener("click",()=>window.print());
