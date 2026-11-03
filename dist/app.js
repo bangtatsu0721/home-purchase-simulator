@@ -106,17 +106,18 @@ function buildModel() {
   const leisureAnnual = num("leisure") * 10000;
   const savingsAnnual = num("savingsTarget") * 10000;
   const ownerMonthly = (num("maintenance") + num("parking")) * 10000 + num("ownerAnnual") * 10000 / 12;
-  const priceLine = (ratio, rateAdd, keepSavings) => {
-    const debtLimit = disposable / 12 * ratio;
-    const cashflowLimit = Math.max(0, (disposable - livingAnnual - leisureAnnual - (keepSavings ? savingsAnnual : 0)) / 12 - ownerMonthly);
-    const affordablePayment = Math.max(0, Math.min(debtLimit, cashflowLimit));
+  const priceLine = (ratio, rateAdd) => {
+    // 購入ラインは表示どおり「手取りに対する総住居費の割合」で算出する。
+    // 生活費・教育費・貯蓄目標は、生涯収支と総合判定で別途確認する。
+    const totalHousingLimit = disposable / 12 * ratio;
+    const affordablePayment = Math.max(0, totalHousingLimit - ownerMonthly);
     const factor = monthlyPayment(1, pct("interest") + rateAdd, num("loanYears"));
     const affordableLoan = factor > 0 ? affordablePayment / factor : 0;
     return Math.max(0, (affordableLoan + down) / (1 + pct("purchaseCost")));
   };
-  const roomyPrice = priceLine(.25, .02, true);
-  const safePrice = Math.max(roomyPrice, priceLine(.30, .01, true));
-  const upperPrice = Math.max(safePrice, priceLine(.35, .005, false));
+  const roomyPrice = priceLine(.25, .02);
+  const safePrice = Math.max(roomyPrice, priceLine(.30, .01));
+  const upperPrice = Math.max(safePrice, priceLine(.35, .005));
   return {rows, payment, roomyPrice, safePrice, upperPrice, price, scenario};
 }
 
