@@ -5,3 +5,27 @@
 @media print{body{background:#fff}.topbar,.input-panel,.tabs,.top-actions{display:none!important}.workspace{display:block;min-height:0}.results-panel{padding:0}.tab-panel{display:block!important;box-shadow:none;border:0;break-inside:avoid;margin-bottom:22px}.verdict-card,.metrics article{box-shadow:none}.results-panel>footer{margin-top:8px}.chart-wrap{height:260px}.table-wrap{max-height:none}.section-title{margin-top:10px}}
 .metrics{grid-template-columns:repeat(3,1fr)}.metrics small{display:block;color:var(--muted);font-size:.66rem;margin-top:5px}.metrics .price-line{border-top:4px solid var(--blue)}.metrics .roomy{border-top-color:#5b9bd5}.metrics .safe{border-top-color:#548235;background:#f7fbf8}.metrics .upper{border-top-color:#c79428}
 @media(max-width:1050px){.metrics{grid-template-columns:1fr 1fr}}
+
+/* 一般のお客様向け比較表示 */
+.comparison-answer{margin:17px 0 8px;padding:16px 18px;border-radius:10px;border-left:5px solid var(--blue);background:#edf5fb;color:var(--navy)}
+.comparison-answer.rent-lead{border-left-color:#7f8fa6;background:#f4f5f6}
+.comparison-answer strong,.comparison-answer span{display:block}
+.comparison-answer strong{font-size:1.03rem;line-height:1.5}
+.comparison-answer span{margin-top:5px;color:var(--muted);font-size:.78rem;line-height:1.6}
+.compare-cards.consumer article{padding:18px}
+.compare-cards.consumer strong{font-size:1.65rem}
+.compare-cards.consumer dl{margin:14px 0 0;padding-top:11px;border-top:1px solid rgba(23,54,93,.13)}
+.compare-cards.consumer dl div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;font-size:.78rem;text-align:left}
+.compare-cards.consumer dt{color:var(--muted)}
+.compare-cards.consumer dd{margin:0;color:var(--navy);font-weight:800;text-align:right}
+.plain-guide{display:flex;flex-wrap:wrap;gap:14px;margin:14px 0 0;color:var(--muted);font-size:.76rem}
+.plain-guide span:before{content:"";display:inline-block;width:18px;height:3px;margin-right:7px;vertical-align:middle;border-radius:3px}
+.guide-cash:before{background:#2f75b5}.guide-rent:before{background:#7f8fa6}
+.table-heading{margin:19px 0 9px;color:var(--navy);font-size:.9rem}
+.positive{color:var(--green)!important;font-weight:800}
+@media(max-width:760px){
+  .comparison-answer{padding:14px}
+  .comparison-answer strong{font-size:.92rem}
+  .compare-cards.consumer dl div{font-size:.74rem}
+  .age-table-wrap table{min-width:820px}
+}
