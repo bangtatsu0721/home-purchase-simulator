@@ -170,10 +170,25 @@ function render() {
   document.getElementById("upperRule").textContent=`額面年収40％・審査金利${screeningRateLabel}％`;
   const badge=document.getElementById("shortageBadge");badge.textContent=shortage?`${shortage.age}歳ごろに手元資金を確認`:`${num("endAge")}歳までプラス`;badge.className=shortage?"warning":"";
   document.getElementById("assetExplanation").innerHTML=shortage?`<strong>収支確認の目安</strong><br>${shortage.age}歳ごろに手元資金が0円となる試算です。マイナス資産としては累積せず、赤字になる年度は「生涯収支」で確認できます。`:`<strong>手元資金について</strong><br>${num("endAge")}歳まで、預貯金・投資資産を維持できる試算です。`;
-  document.getElementById("buyTotal").textContent=yen(last.purchaseTotal);document.getElementById("rentTotal").textContent=signedYen(last.rentTotal);
-  const ages=[65,75,85,num("endAge")].filter((v,i,a)=>v>=num("age")&&v<=num("endAge")&&a.indexOf(v)===i);document.getElementById("compareTable").innerHTML=ages.map(a=>{const r=rows.find(x=>x.age===a)||last;return `<tr><td>${a}歳</td><td class="${r.purchaseAssets<0?'negative':''}">${signedYen(r.purchaseAssets)}</td><td>${yen(r.homeEquity)}</td><td class="${r.purchaseTotal<0?'negative':''}">${signedYen(r.purchaseTotal)}</td><td class="${r.rentAssets<0?'negative':''}">${signedYen(r.rentAssets)}</td></tr>`}).join("");
+  document.getElementById("buyTotal").textContent=yen(last.purchaseTotal);
+  document.getElementById("rentTotal").textContent=signedYen(last.rentTotal);
+  document.getElementById("buyCash").textContent=signedYen(last.purchaseAssets);
+  document.getElementById("buyHome").textContent=yen(last.homeEquity);
+  document.getElementById("rentCash").textContent=signedYen(last.rentAssets);
+  const finalDifference=last.purchaseTotal-last.rentTotal;
+  const comparisonAnswer=document.getElementById("comparisonAnswer");
+  if(Math.abs(finalDifference)<1){
+    comparisonAnswer.innerHTML=`<strong>${last.age}歳時点では、ほぼ同じ結果です</strong><span>購入と賃貸で、将来残る金額の差はほとんどありません。</span>`;
+  }else if(finalDifference>0){
+    comparisonAnswer.innerHTML=`<strong>${last.age}歳時点では、購入した場合が約${yen(Math.abs(finalDifference))}多く残る試算です</strong><span>ただし、購入側にはすぐ使えない「家の価値」も含まれます。</span>`;
+  }else{
+    comparisonAnswer.innerHTML=`<strong>${last.age}歳時点では、賃貸を続けた場合が約${yen(Math.abs(finalDifference))}多く残る試算です</strong><span>購入価格、家賃、売却時の家の価値によって結果は変わります。</span>`;
+  }
+  comparisonAnswer.className=`comparison-answer ${finalDifference>=0?'buy-lead':'rent-lead'}`;
+  const ages=[65,75,85,num("endAge")].filter((v,i,list)=>v>=num("age")&&v<=num("endAge")&&list.indexOf(v)===i);
+  document.getElementById("compareTable").innerHTML=ages.map(ageValue=>{const r=rows.find(x=>x.age===ageValue)||last;const diff=r.purchaseTotal-r.rentTotal;return `<tr><td>${ageValue}歳</td><td class="${r.purchaseAssets<0?'negative':''}">${signedYen(r.purchaseAssets)}</td><td>${yen(r.homeEquity)}</td><td class="${r.purchaseTotal<0?'negative':''}">${signedYen(r.purchaseTotal)}</td><td class="${r.rentAssets<0?'negative':''}">${signedYen(r.rentAssets)}</td><td class="${diff<0?'negative':'positive'}">${diff>=0?'+':''}${signedYen(diff)}</td></tr>`}).join("");
   document.getElementById("cashflowTable").innerHTML=rows.map(r=>`<tr><td>${r.age}歳</td><td>${yen(r.income)}</td><td>${yen(r.livingLeisure)}</td><td>${yen(r.education)}</td><td>${yen(r.purchaseHousing)}</td><td class="${r.purchaseAnnual<0?'negative':''}">${signedYen(r.purchaseAnnual)}</td><td class="${r.purchaseAssets<0?'negative':''}">${signedYen(r.purchaseAssets)}</td></tr>`).join("");
-  requestAnimationFrame(()=>{drawChart(document.getElementById("assetChart"),rows,[{label:"手元の金融資産",color:"#2f75b5",get:r=>r.purchaseAssets}]);drawChart(document.getElementById("compareChart"),rows,[{label:"購入：総資産",color:"#2f75b5",get:r=>r.purchaseTotal},{label:"賃貸：金融資産",color:"#7f8fa6",get:r=>r.rentTotal}])});
+  requestAnimationFrame(()=>{drawChart(document.getElementById("assetChart"),rows,[{label:"手元の金融資産",color:"#2f75b5",get:r=>r.purchaseAssets}]);drawChart(document.getElementById("compareChart"),rows,[{label:"買った場合に残る合計",color:"#2f75b5",get:r=>r.purchaseTotal},{label:"賃貸で手元に残るお金",color:"#7f8fa6",get:r=>r.rentTotal}])});
 }
 
 let timer; ids.forEach(id=>{const element=document.getElementById(id);const update=()=>{if(id==="spouseStatus")syncSpouseFields();clearTimeout(timer);timer=setTimeout(render,60)};element.addEventListener("input",update);if(element.tagName==="SELECT")element.addEventListener("change",update)});
