@@ -82,7 +82,6 @@
         <div class="form-grid">
           <label class="field"><span>現在の月々の生活費＋住居費の合計</span><small>食費・光熱費などの生活費と、現在の家賃・共益費等をすべて合計した月額</small><div class="unit"><input id="living" type="number" value="27" min="0" step="1" aria-label="現在の生活費と住居費の合計（月額）"><b>万円/月</b></div></label>
           <label class="field"><span>年間旅行・その他</span><div class="unit"><input id="leisure" type="number" value="55" min="0" step="5"><b>万円</b></div></label>
-          <label class="field"><span>年間の貯蓄目標（判定用）</span><small>実際の年間黒字と比較します。支出には加算しません</small><div class="unit"><input id="savingsTarget" type="number" value="100" min="0" step="10"><b>万円/年</b></div></label>
           <label class="field"><span>現在の預金</span><div class="unit"><input id="cash" type="number" value="800" min="0" step="50"><b>万円</b></div></label>
           <label class="field"><span>現在の投資資産</span><div class="unit"><input id="investments" type="number" value="200" min="0" step="50"><b>万円</b></div></label>
           <label class="field"><span>物価上昇率 <button class="help" data-help="生活費・旅行費などが毎年増える想定率です。">?</button></span><div class="unit"><input id="inflation" type="number" value="0.5" min="0" max="5" step="0.1"><b>%</b></div></label>
@@ -226,7 +225,7 @@
 
       <section class="tab-panel" id="cashflow">
         <div class="section-title"><div><h3>生涯キャッシュフロー</h3><p>各年の収入・支出と期末金融資産を確認できます。</p></div></div>
-        <div class="table-wrap"><table><thead><tr><th>年齢</th><th>手取り・年金</th><th>生活・旅行</th><th>子育て・教育の時期</th><th>子育て・教育費</th><th>購入の住居費</th><th>年間収支</th><th>貯蓄目標の達成状況</th><th>期末金融資産</th></tr></thead><tbody id="cashflowTable"></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>年齢</th><th>手取り・年金</th><th>生活・旅行</th><th>子育て・教育の時期</th><th>子育て・教育費</th><th>購入の住居費</th><th>年間収支</th><th>期末金融資産</th></tr></thead><tbody id="cashflowTable"></tbody></table></div>
       </section>
 
       <footer class="disclaimer">本試算は入力条件に基づく概算です。融資承認、税額、将来の収支、住宅の売却価格を保証するものではありません。</footer>
@@ -234,6 +233,6 @@
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=20261121-savings-goal"></script>
+  <script src="app.js?v=20261121-no-savings-goal"></script>
 </body>
 </html>
