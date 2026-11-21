@@ -438,6 +438,12 @@ function render() {
   comparisonAnswer.className=`comparison-answer ${finalDifference>=0?'buy-lead':'rent-lead'}`;
   const ages=[65,75,85,num("endAge")].filter((v,i,list)=>v>=num("age")&&v<=num("endAge")&&list.indexOf(v)===i);
   document.getElementById("compareTable").innerHTML=ages.map(ageValue=>{const r=rows.find(x=>x.age===ageValue)||last;const offset=r.age-num("age");const cash=presentValue(r.purchaseAssets,offset);const home=presentValue(r.homeEquity,offset);const total=presentValue(r.purchaseTotal,offset);const rent=presentValue(r.rentAssets,offset);const diff=total-rent;return `<tr><td>${ageValue}歳</td><td>${signedYen(cash)}</td><td>${yen(home)}</td><td>${signedYen(total)}</td><td>${signedYen(rent)}</td><td class="${diff<0?'negative':'positive'}">${diff>=0?'+':''}${signedYen(diff)}</td></tr>`}).join("");
+  document.getElementById("rentCashflowTable").innerHTML=rows.map(r=>{
+    const isShortage=r.rentAnnual<0&&r.rentAssets===0;
+    const balanceClass=r.rentAnnual>=0?'positive':isShortage?'negative':'drawdown';
+    const balanceText=r.rentAnnual>=0?`+${yen(r.rentAnnual)}`:isShortage?`不足 ${yen(Math.abs(r.rentAnnual))}`:`資産から ${yen(Math.abs(r.rentAnnual))} 補填`;
+    return `<tr><td>${r.age}歳</td><td>${yen(r.income)}</td><td>${yen(r.livingLeisure)}</td><td class="${r.education>0?'education-cost':''}">${yen(r.education)}</td><td>${yen(r.rentHousing)}</td><td class="${balanceClass}">${balanceText}</td><td>${signedYen(r.rentAssets)}</td></tr>`;
+  }).join("");
   renderTimingComparison(model);
   document.getElementById("cashflowTable").innerHTML=rows.map(r=>{
     const isShortage=r.purchaseAnnual<0&&r.purchaseAssets===0;
