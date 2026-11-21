@@ -291,6 +291,22 @@ function loanBalanceAfter(principal, annualRate, totalYears, elapsedYears, annua
   return balance;
 }
 
+function timingReferenceValues(years) {
+  const waitingYears=Math.min(20,Math.max(1,Number(years)||1));
+  // 5年後で年2.0％、以降は待つ期間が長いほど上振れリスクを0.1ptずつ加算。
+  const priceGrowth=Math.min(3.0,1.5+waitingYears*0.1);
+  // 5年後で現在より0.5pt上昇。長期ほど金利上昇リスクを0.1pt/年で加算。
+  const futureInterest=Math.min(15,num("interest")+Math.min(2.0,waitingYears*0.1));
+  return {priceGrowth,futureInterest};
+}
+
+function applyTimingReferenceValues() {
+  const years=Math.max(1,num("waitYears"));
+  const reference=timingReferenceValues(years);
+  document.getElementById("futurePriceGrowth").value=reference.priceGrowth.toFixed(1);
+  document.getElementById("futureInterest").value=reference.futureInterest.toFixed(1);
+}
+
 function renderTimingComparison(model) {
   const years=Math.max(1,num("waitYears"));
   const currentPrice=num("price")*10000;
@@ -329,8 +345,10 @@ function renderTimingComparison(model) {
   }
   document.getElementById("timingNowPrice").textContent=yen(currentPrice);
   document.getElementById("timingNowPayment").textContent=`${yen(currentPayment)}/月`;
-  document.getElementById("timingNowEquityLabel").textContent=`${years}年後の住宅資産`;
+  document.getElementById("timingNowEquityLabel").textContent=`${years}年後に売却した場合の手残り想定額`;
   document.getElementById("timingNowEquity").textContent=yen(currentEquity);
+  const timingReference=timingReferenceValues(years);
+  document.getElementById("timingReferenceSummary").textContent=`${years}年後の参考値：物件価格 年${timingReference.priceGrowth.toFixed(1)}％上昇／金利 現在より${Math.min(2.0,years*0.1).toFixed(1)}ポイント上昇`;
   document.getElementById("timingLaterTitle").textContent=`${years}年後に買う場合`;
   document.getElementById("timingLaterPrice").textContent=yen(futurePrice);
   document.getElementById("timingLaterRate").textContent=`${num("futureInterest").toLocaleString("ja-JP",{maximumFractionDigits:2})}％`;
@@ -430,7 +448,7 @@ function render() {
   requestAnimationFrame(()=>{drawChart(document.getElementById("assetChart"),rows,[{label:"手元の金融資産",color:"#2f75b5",get:r=>r.purchaseAssets}]);drawChart(document.getElementById("compareChart"),rows,[{label:"買った場合に残る合計（現在価値）",color:"#2f75b5",get:r=>presentValue(r.purchaseTotal,r.age-num("age"))},{label:"賃貸で手元に残るお金（現在価値）",color:"#7f8fa6",get:r=>presentValue(r.rentTotal,r.age-num("age"))}])});
 }
 
-let timer; ids.forEach(id=>{const element=document.getElementById(id);const update=()=>{if(id==="spouseStatus")syncSpouseFields();if(id.includes("child"))syncChildFields();clearTimeout(timer);timer=setTimeout(render,60)};element.addEventListener("input",update);if(element.tagName==="SELECT")element.addEventListener("change",update)});
+let timer; ids.forEach(id=>{const element=document.getElementById(id);const update=()=>{if(id==="spouseStatus")syncSpouseFields();if(id.includes("child"))syncChildFields();if(id==="waitYears")applyTimingReferenceValues();clearTimeout(timer);timer=setTimeout(render,60)};element.addEventListener("input",update);if(element.tagName==="SELECT")element.addEventListener("change",update)});
 document.querySelectorAll(".tab").forEach(button=>button.addEventListener("click",()=>{document.querySelectorAll(".tab,.tab-panel").forEach(x=>x.classList.remove("active"));button.classList.add("active");document.getElementById(button.dataset.tab).classList.add("active");render()}));
 document.querySelectorAll(".help").forEach(button=>button.addEventListener("click",e=>{e.preventDefault();showToast(button.dataset.help)}));
 document.getElementById("savePlanButton").addEventListener("click",saveCurrentPlan);
@@ -439,8 +457,7 @@ document.getElementById("deletePlanButton").addEventListener("click",deleteSelec
 document.getElementById("saveName").addEventListener("keydown",event=>{if(event.key==="Enter") saveCurrentPlan()});
 document.getElementById("timingPresetButton").addEventListener("click",()=>{
   document.getElementById("waitYears").value=5;
-  document.getElementById("futurePriceGrowth").value=2.0;
-  document.getElementById("futureInterest").value=(num("interest")+0.5).toFixed(1);
+  applyTimingReferenceValues();
   document.getElementById("futureLoanYears").value=Math.max(1,num("loanYears")-5);
   document.getElementById("waitSavings").value=100;
   document.getElementById("waitRentGrowth").value=1.0;
