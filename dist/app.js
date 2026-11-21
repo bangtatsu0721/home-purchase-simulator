@@ -194,6 +194,8 @@ function drawChart(canvas, rows, series) {
 }
 
 function render() {
+  syncChildFields();
+  renderEducationSchedule();
   const model = buildModel(), rows = model.rows, last = rows.at(-1);
   const shortage = rows.find(r => r.purchaseAssets === 0 && r.purchaseAnnual < 0);
   const minimum = rows.reduce((a,b)=>a.purchaseAssets<b.purchaseAssets?a:b);
