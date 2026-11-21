@@ -140,16 +140,17 @@ function buildModel() {
     let gross2 = (hasSpouse() ? num("income2") : 0) * 10000 * incomeFactor;
     if (incomeStress && y >= 3 && y < 6) { gross1 *= .7; gross2 *= .7; }
     const workingIncome = takeHome(gross1) + takeHome(gross2);
-    const income = currentAge < retireAge ? workingIncome : num("pension") * 10000;
+    const pensionIndex = currentAge < retireAge ? 1 : Math.pow(1 + inflation * .5, currentAge - retireAge);
+    const income = currentAge < retireAge ? workingIncome : num("pension") * 10000 * pensionIndex;
     // 「毎月生活費」は現在の住居費込み。現在家賃を除いた生活費本体だけを
     // 購入・賃貸それぞれの住居費に加えることで、住居費の二重計上を防ぐ。
     const currentGrossRentMonthly = (num("rent") + num("rentFee")) * 10000;
     const currentSubsidyMonthly = num("rentSubsidyYears") > 0 ? Math.min(currentGrossRentMonthly, num("rentSubsidy") * 10000) : 0;
     const currentHousing = (currentGrossRentMonthly - currentSubsidyMonthly) * 12 + num("rentAnnual") * 10000;
     const nonHousingLiving = Math.max(0, num("living") * 120000 - currentHousing);
-    const livingBase = currentAge < retireAge ? nonHousingLiving : nonHousingLiving * .78;
+    const livingBase = currentAge < retireAge ? nonHousingLiving : nonHousingLiving * .70;
     const living = livingBase * Math.pow(1 + inflation, y);
-    const leisure = num("leisure") * 10000 * (currentAge < retireAge ? 1 : .7) * Math.pow(1 + inflation, y);
+    const leisure = num("leisure") * 10000 * (currentAge < retireAge ? 1 : .5) * Math.pow(1 + inflation, y);
     const childAges=[childAgeAtYear(childProfile(1),y),childAgeAtYear(childProfile(2),y)];
     const education = childAges.reduce((total,childAge)=>total+childCost(childAge,document.getElementById("education").value),0);
     const educationDetail=childAges.map((childAge,index)=>childStage(childAge)?`第${index+1}子：${childStage(childAge)}`:"").filter(Boolean).join("／");
@@ -165,7 +166,7 @@ function buildModel() {
       loanBalance = Math.max(0, loanBalance - principalPart);
       annualLoan += actualPayment;
     }
-    const ownerCosts = (num("maintenance") + num("parking")) * 120000 * Math.pow(1 + inflation, y) + num("ownerAnnual") * 10000 * Math.pow(1 + inflation, y);
+    const ownerCosts = (num("maintenance") + num("parking")) * 120000 * Math.pow(1 + inflation * .5, y) + num("ownerAnnual") * 10000;
     const purchaseHousing = annualLoan + ownerCosts;
     const grossRentMonthly = (num("rent") + num("rentFee")) * 10000 * Math.pow(1 + pct("rentGrowth"), y);
     const subsidyMonthly = y < num("rentSubsidyYears") ? Math.min(grossRentMonthly, num("rentSubsidy") * 10000) : 0;
