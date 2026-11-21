@@ -352,7 +352,20 @@ document.getElementById("timingPresetButton").addEventListener("click",()=>{
   document.getElementById("waitRentGrowth").value=1.0;
   render();
 });
-document.getElementById("printButton").addEventListener("click",()=>window.print());
+function preparePrintCharts() {
+  document.body.classList.add("printing");
+  render();
+}
+function restoreScreenCharts() {
+  document.body.classList.remove("printing");
+  render();
+}
+document.getElementById("printButton").addEventListener("click",()=>{
+  preparePrintCharts();
+  requestAnimationFrame(()=>requestAnimationFrame(()=>window.print()));
+});
+window.addEventListener("beforeprint",preparePrintCharts);
+window.addEventListener("afterprint",restoreScreenCharts);
 document.getElementById("resetButton").addEventListener("click",()=>{ids.forEach(id=>document.getElementById(id).value=initial[id]);syncSpouseFields();render()});
 window.addEventListener("resize",()=>{clearTimeout(timer);timer=setTimeout(render,120)});
 syncSpouseFields();
