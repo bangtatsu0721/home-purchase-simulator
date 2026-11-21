@@ -274,7 +274,7 @@ function buildModel() {
   const roomyPrice = priceLine(.30);
   const safePrice = priceLine(.35);
   const upperPrice = priceLine(.40);
-  return {rows, payment, roomyPrice, safePrice, upperPrice, price, scenario};
+  return {rows, payment, roomyPrice, safePrice, upperPrice, price, loan, down, scenario};
 }
 
 function loanBalanceAfter(principal, annualRate, totalYears, elapsedYears, annualBonus=0) {
@@ -372,28 +372,28 @@ function render() {
   const shortage = rows.find(r => r.purchaseAssets === 0 && r.purchaseAnnual < 0);
   const minimum = rows.reduce((a,b)=>a.purchaseAssets<b.purchaseAssets?a:b);
   let verdict = "ゆとりを持って検討しやすい", state = "", text = "ゆとり購入ライン内の物件価格です。";
-  if (model.price <= model.roomyPrice) {
+  if (model.loan <= model.roomyPrice) {
     verdict="ゆとりを持って検討しやすい";
-    text="額面年収30％のゆとり購入ライン内です。";
-  } else if (model.price <= model.safePrice) {
+    text=`借入額${yen(model.loan)}は、額面年収30％のゆとり借入ライン内です。`;
+  } else if (model.loan <= model.safePrice) {
     verdict="安心して検討しやすい";
-    text="額面年収35％の安心購入ライン内です。";
-  } else if (model.price <= model.upperPrice) {
+    text=`借入額${yen(model.loan)}は、額面年収35％の安心借入ライン内です。`;
+  } else if (model.loan <= model.upperPrice) {
     verdict="条件を確認しながら検討";
     state="warning";
-    text="額面年収40％の検討上限ライン内です。";
+    text=`借入額${yen(model.loan)}は、額面年収40％の借入検討上限ライン内です。`;
   } else {
     verdict="購入条件の見直しをおすすめ";
     state="danger";
-    text="検討上限ラインを超えています。自己資金や物件価格をご確認ください。";
+    text=`借入額${yen(model.loan)}が借入検討上限ラインを超えています。自己資金や物件価格をご確認ください。`;
   }
   const card=document.getElementById("verdictCard");card.className=`verdict-card ${state}`;document.getElementById("verdict").textContent=verdict;document.getElementById("verdictText").textContent=text;
   const scenarioNames={standard:"標準シナリオ",rate:"金利上昇シナリオ",income:"収入減少シナリオ",combined:"複合シナリオ"};document.getElementById("scenarioChip").textContent=scenarioNames[model.scenario];
-  document.getElementById("metricPrice").textContent=yen(model.price);document.getElementById("metricRoomy").textContent=yen(model.roomyPrice);document.getElementById("metricSafe").textContent=yen(model.safePrice);document.getElementById("metricUpper").textContent=yen(model.upperPrice);document.getElementById("metricPayment").textContent=`${yen(model.payment)}/月`;document.getElementById("metricMinimum").textContent=`${signedYen(minimum.purchaseAssets)}（${minimum.age}歳）`;
+  document.getElementById("metricPrice").textContent=yen(model.price);document.getElementById("metricLoan").textContent=`借入額 ${yen(model.loan)}（自己資金 ${yen(model.down)}）`;document.getElementById("metricRoomy").textContent=yen(model.roomyPrice);document.getElementById("metricSafe").textContent=yen(model.safePrice);document.getElementById("metricUpper").textContent=yen(model.upperPrice);document.getElementById("metricPayment").textContent=`${yen(model.payment)}/月`;document.getElementById("metricMinimum").textContent=`${signedYen(minimum.purchaseAssets)}（${minimum.age}歳）`;
   const screeningRateLabel = num("screeningInterest").toLocaleString("ja-JP", {maximumFractionDigits:2});
-  document.getElementById("roomyRule").textContent=`額面年収30％・審査金利${screeningRateLabel}％`;
-  document.getElementById("safeRule").textContent=`額面年収35％・審査金利${screeningRateLabel}％`;
-  document.getElementById("upperRule").textContent=`額面年収40％・審査金利${screeningRateLabel}％`;
+  document.getElementById("roomyRule").textContent=`額面年収30％・審査金利${screeningRateLabel}％／自己資金込み物件目安 ${yen(model.roomyPrice+model.down)}`;
+  document.getElementById("safeRule").textContent=`額面年収35％・審査金利${screeningRateLabel}％／自己資金込み物件目安 ${yen(model.safePrice+model.down)}`;
+  document.getElementById("upperRule").textContent=`額面年収40％・審査金利${screeningRateLabel}％／自己資金込み物件目安 ${yen(model.upperPrice+model.down)}`;
   const badge=document.getElementById("shortageBadge");badge.textContent=shortage?`${shortage.age}歳ごろに手元資金を確認`:`${num("endAge")}歳までプラス`;badge.className=shortage?"warning":"";
   document.getElementById("assetExplanation").innerHTML=shortage?`<strong>収支確認の目安</strong><br>${shortage.age}歳ごろに手元資金が0円となる試算です。マイナス資産としては累積せず、赤字になる年度は「生涯収支」で確認できます。`:`<strong>手元資金について</strong><br>${num("endAge")}歳まで、預貯金・投資資産を維持できる試算です。`;
   const presentValue=(value,yearOffset)=>value/Math.pow(1+pct("inflation"),yearOffset);
