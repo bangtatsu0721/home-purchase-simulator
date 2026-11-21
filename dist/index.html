@@ -6,7 +6,7 @@
   <meta name="description" content="住宅購入と賃貸継続を、生涯収支と総資産から比較するシミュレーター">
   <title>住宅購入安心度シミュレーター</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317365d'/%3E%3Cpath d='M13 31 32 15l19 16v21H38V38H26v14H13Z' fill='%23fff'/%3E%3Cpath d='M45 20v-6h6v11Z' fill='%239ac7aa'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261121-named-saves">
+  <link rel="stylesheet" href="styles.css?v=20261121-loan-judgement">
 </head>
 <body>
   <header class="topbar">
@@ -141,15 +141,15 @@
       </div>
 
       <div class="verdict-card" id="verdictCard">
-        <div><span class="verdict-label">購入価格の判定</span><strong id="verdict">安心して検討しやすい</strong></div>
+        <div><span class="verdict-label">借入額の判定</span><strong id="verdict">安心して検討しやすい</strong></div>
         <p id="verdictText"></p>
       </div>
 
       <div class="metrics">
-        <article><span>入力中の物件価格</span><strong id="metricPrice"></strong></article>
-        <article class="price-line roomy"><span>ゆとり購入ライン</span><strong id="metricRoomy"></strong><small id="roomyRule">額面年収30％・審査金利3.3％</small></article>
-        <article class="price-line safe"><span>安心購入ライン</span><strong id="metricSafe"></strong><small id="safeRule">額面年収35％・審査金利3.3％</small></article>
-        <article class="price-line upper"><span>検討上限ライン</span><strong id="metricUpper"></strong><small id="upperRule">額面年収40％・審査金利3.3％</small></article>
+        <article><span>入力中の物件価格</span><strong id="metricPrice"></strong><small class="loan-breakdown" id="metricLoan"></small></article>
+        <article class="price-line roomy"><span>ゆとり借入ライン</span><strong id="metricRoomy"></strong><small id="roomyRule">額面年収30％・審査金利3.3％</small></article>
+        <article class="price-line safe"><span>安心借入ライン</span><strong id="metricSafe"></strong><small id="safeRule">額面年収35％・審査金利3.3％</small></article>
+        <article class="price-line upper"><span>借入検討上限ライン</span><strong id="metricUpper"></strong><small id="upperRule">額面年収40％・審査金利3.3％</small></article>
         <article><span>毎月ローン返済額</span><strong id="metricPayment"></strong></article>
         <article><span>手元資金の最低額</span><strong id="metricMinimum"></strong></article>
       </div>
@@ -247,6 +247,6 @@
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=20261121-named-saves"></script>
+  <script src="app.js?v=20261121-loan-judgement"></script>
 </body>
 </html>
