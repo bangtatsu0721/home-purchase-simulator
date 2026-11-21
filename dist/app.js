@@ -1,4 +1,4 @@
-const ids = ["scenario","spouseStatus","age","spouseAge","income1","income2","retireAge","endAge","pension","retirementPay","child1","child2","education","living","leisure","savingsTarget","cash","investments","inflation","returnRate","price","downPayment","interest","screeningInterest","loanYears","maintenance","parking","ownerAnnual","purchaseCost","rent","rentFee","rentAnnual","rentGrowth","homeGrowth","saleCost","homeFloor"];
+const ids = ["scenario","spouseStatus","age","spouseAge","income1","income2","retireAge","endAge","pension","retirementPay","child1Mode","child1","child1BirthIn","child2Mode","child2","child2BirthIn","education","living","leisure","savingsTarget","cash","investments","inflation","returnRate","price","downPayment","interest","screeningInterest","loanYears","maintenance","parking","ownerAnnual","purchaseCost","rent","rentFee","rentAnnual","rentGrowth","homeGrowth","saleCost","homeFloor"];
 const initial = Object.fromEntries(ids.map(id => [id, document.getElementById(id).value]));
 const yen = value => `${Math.round(value / 10000).toLocaleString("ja-JP")}万円`;
 const signedYen = value => value < 0 ? `▲${yen(Math.abs(value))}` : yen(value);
@@ -47,6 +47,56 @@ function childCost(age, plan) {
   return publicCosts;
 }
 
+function childProfile(index) {
+  const mode = document.getElementById(`child${index}Mode`).value;
+  if (mode === "current") return {mode, currentAge:num(`child${index}`)};
+  if (mode === "future") return {mode, birthIn:num(`child${index}BirthIn`)};
+  return {mode:"none"};
+}
+
+function childAgeAtYear(profile, yearOffset) {
+  if (profile.mode === "current") return profile.currentAge + yearOffset;
+  if (profile.mode === "future") return yearOffset - profile.birthIn;
+  return -1;
+}
+
+function childStage(age) {
+  if (age < 0 || age > 21) return "";
+  if (age === 0) return "誕生・乳幼児";
+  if (age <= 5) return "保育・幼児期";
+  if (age <= 11) return age === 6 ? "小学校入学" : "小学生";
+  if (age <= 14) return age === 12 ? "中学校入学" : "中学生";
+  if (age <= 17) return age === 15 ? "高校入学" : "高校生";
+  return age === 18 ? "大学入学" : "大学生";
+}
+
+function syncChildFields() {
+  [1,2].forEach(index => {
+    const mode=document.getElementById(`child${index}Mode`).value;
+    document.querySelector(`.child-current-field[data-child="${index}"]`).hidden=mode!=="current";
+    document.querySelector(`.child-future-field[data-child="${index}"]`).hidden=mode!=="future";
+  });
+}
+
+function renderEducationSchedule() {
+  const container=document.getElementById("educationSchedule");
+  const parentAge=num("age"), plan=document.getElementById("education").value;
+  const milestones=[{age:0,label:"誕生・乳幼児期"},{age:6,label:"小学校入学"},{age:12,label:"中学校入学"},{age:15,label:"高校入学"},{age:18,label:"大学入学"}];
+  const cards=[1,2].map(index=>{
+    const profile=childProfile(index);
+    if(profile.mode==="none") return "";
+    const currentChildAge=profile.mode==="current"?profile.currentAge:-profile.birthIn;
+    const items=milestones.filter(m=>m.age>=Math.max(0,currentChildAge)).map(m=>{
+      const yearsUntil=profile.mode==="current"?m.age-profile.currentAge:profile.birthIn+m.age;
+      const atAge=parentAge+yearsUntil;
+      return `<li><span>${yearsUntil===0?"今年":yearsUntil+"年後"}・本人${atAge}歳ごろ</span><strong>${m.label}</strong><b>年間約${yen(childCost(m.age,plan))}</b></li>`;
+    }).join("");
+    const start=profile.mode==="future"?`${profile.birthIn}年後に誕生予定`:`現在${profile.currentAge}歳`;
+    return `<article><h4>第${index}子 <small>${start}</small></h4><ul>${items||"<li><span>入力した試算期間内の主な節目はありません</span></li>"}</ul></article>`;
+  }).filter(Boolean).join("");
+  container.innerHTML=cards?`<div class="schedule-heading"><strong>いつ、どんな費用がかかる？</strong><span>現在の本人年齢を基準にした概算です</span></div><div class="schedule-cards">${cards}</div>`:`<p class="schedule-empty">お子さまの予定を選ぶと、誕生から大学までの時期と費用目安が表示されます。</p>`;
+}
+
 function buildModel() {
   const age = num("age"), endAge = Math.max(age, num("endAge")), retireAge = num("retireAge");
   const years = endAge - age;
@@ -81,7 +131,9 @@ function buildModel() {
     const livingBase = currentAge < retireAge ? nonHousingLiving : nonHousingLiving * .78;
     const living = livingBase * Math.pow(1 + inflation, y);
     const leisure = num("leisure") * 10000 * (currentAge < retireAge ? 1 : .7) * Math.pow(1 + inflation, y);
-    const education = childCost(num("child1") < 0 ? -1 : num("child1") + y, document.getElementById("education").value) + childCost(num("child2") < 0 ? -1 : num("child2") + y, document.getElementById("education").value);
+    const childAges=[childAgeAtYear(childProfile(1),y),childAgeAtYear(childProfile(2),y)];
+    const education = childAges.reduce((total,childAge)=>total+childCost(childAge,document.getElementById("education").value),0);
+    const educationDetail=childAges.map((childAge,index)=>childStage(childAge)?`第${index+1}子：${childStage(childAge)}`:"").filter(Boolean).join("／");
 
     let annualLoan = 0;
     for (let m = 0; m < 12 && y * 12 + m < totalMonths; m++) {
@@ -104,7 +156,7 @@ function buildModel() {
     rentAssets = Math.max(0, rentAssets + rentAnnual + Math.max(0, rentAssets) * investmentReturn);
     const homeValue = Math.max(price * pct("homeFloor"), price * Math.pow(1 + pct("homeGrowth"), y));
     const homeEquity = Math.max(0, homeValue * (1 - pct("saleCost")) - loanBalance);
-    rows.push({age: currentAge, income, livingLeisure: living + leisure, education, purchaseHousing, purchaseAnnual, purchaseAssets, rentHousing, rentAnnual, rentAssets, homeValue, loanBalance, homeEquity, purchaseTotal: purchaseAssets + homeEquity, rentTotal: rentAssets});
+    rows.push({age: currentAge, income, livingLeisure: living + leisure, education, educationDetail, purchaseHousing, purchaseAnnual, purchaseAssets, rentHousing, rentAnnual, rentAssets, homeValue, loanBalance, homeEquity, purchaseTotal: purchaseAssets + homeEquity, rentTotal: rentAssets});
   }
 
   const grossAnnual = (num("income1") + (hasSpouse() ? num("income2") : 0)) * 10000;
@@ -187,17 +239,18 @@ function render() {
   comparisonAnswer.className=`comparison-answer ${finalDifference>=0?'buy-lead':'rent-lead'}`;
   const ages=[65,75,85,num("endAge")].filter((v,i,list)=>v>=num("age")&&v<=num("endAge")&&list.indexOf(v)===i);
   document.getElementById("compareTable").innerHTML=ages.map(ageValue=>{const r=rows.find(x=>x.age===ageValue)||last;const diff=r.purchaseTotal-r.rentTotal;return `<tr><td>${ageValue}歳</td><td class="${r.purchaseAssets<0?'negative':''}">${signedYen(r.purchaseAssets)}</td><td>${yen(r.homeEquity)}</td><td class="${r.purchaseTotal<0?'negative':''}">${signedYen(r.purchaseTotal)}</td><td class="${r.rentAssets<0?'negative':''}">${signedYen(r.rentAssets)}</td><td class="${diff<0?'negative':'positive'}">${diff>=0?'+':''}${signedYen(diff)}</td></tr>`}).join("");
-  document.getElementById("cashflowTable").innerHTML=rows.map(r=>`<tr><td>${r.age}歳</td><td>${yen(r.income)}</td><td>${yen(r.livingLeisure)}</td><td>${yen(r.education)}</td><td>${yen(r.purchaseHousing)}</td><td class="${r.purchaseAnnual<0?'negative':''}">${signedYen(r.purchaseAnnual)}</td><td class="${r.purchaseAssets<0?'negative':''}">${signedYen(r.purchaseAssets)}</td></tr>`).join("");
+  document.getElementById("cashflowTable").innerHTML=rows.map(r=>`<tr><td>${r.age}歳</td><td>${yen(r.income)}</td><td>${yen(r.livingLeisure)}</td><td class="education-stage">${r.educationDetail||"—"}</td><td class="${r.education>0?'education-cost':''}">${yen(r.education)}</td><td>${yen(r.purchaseHousing)}</td><td class="${r.purchaseAnnual<0?'negative':''}">${signedYen(r.purchaseAnnual)}</td><td class="${r.purchaseAssets<0?'negative':''}">${signedYen(r.purchaseAssets)}</td></tr>`).join("");
   requestAnimationFrame(()=>{drawChart(document.getElementById("assetChart"),rows,[{label:"手元の金融資産",color:"#2f75b5",get:r=>r.purchaseAssets}]);drawChart(document.getElementById("compareChart"),rows,[{label:"買った場合に残る合計",color:"#2f75b5",get:r=>r.purchaseTotal},{label:"賃貸で手元に残るお金",color:"#7f8fa6",get:r=>r.rentTotal}])});
 }
 
-let timer; ids.forEach(id=>{const element=document.getElementById(id);const update=()=>{if(id==="spouseStatus")syncSpouseFields();clearTimeout(timer);timer=setTimeout(render,60)};element.addEventListener("input",update);if(element.tagName==="SELECT")element.addEventListener("change",update)});
+let timer; ids.forEach(id=>{const element=document.getElementById(id);const update=()=>{if(id==="spouseStatus")syncSpouseFields();if(id.includes("child"))syncChildFields();clearTimeout(timer);timer=setTimeout(render,60)};element.addEventListener("input",update);if(element.tagName==="SELECT")element.addEventListener("change",update)});
 document.querySelectorAll(".tab").forEach(button=>button.addEventListener("click",()=>{document.querySelectorAll(".tab,.tab-panel").forEach(x=>x.classList.remove("active"));button.classList.add("active");document.getElementById(button.dataset.tab).classList.add("active");render()}));
 document.querySelectorAll(".help").forEach(button=>button.addEventListener("click",e=>{e.preventDefault();const toast=document.getElementById("toast");toast.textContent=button.dataset.help;toast.classList.add("show");setTimeout(()=>toast.classList.remove("show"),3500)}));
 document.getElementById("printButton").addEventListener("click",()=>window.print());
 document.getElementById("resetButton").addEventListener("click",()=>{ids.forEach(id=>document.getElementById(id).value=initial[id]);syncSpouseFields();render()});
 window.addEventListener("resize",()=>{clearTimeout(timer);timer=setTimeout(render,120)});
 syncSpouseFields();
+syncChildFields();
 render();
 
 if (document.modelContext?.registerTool) {
