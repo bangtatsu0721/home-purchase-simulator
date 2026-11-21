@@ -1,4 +1,4 @@
-const ids = ["scenario","spouseStatus","age","spouseAge","income1","income2","retireAge","endAge","pension","retirementPay","child1Mode","child1","child1BirthIn","child2Mode","child2","child2BirthIn","education","waitYears","futurePriceGrowth","futureInterest","futureLoanYears","waitSavings","waitRentGrowth","living","leisure","savingsTarget","cash","investments","inflation","returnRate","price","downPayment","interest","screeningInterest","loanYears","maintenance","parking","ownerAnnual","purchaseCost","rent","rentFee","rentAnnual","rentGrowth","homeGrowth","saleCost","homeFloor"];
+const ids = ["scenario","spouseStatus","age","spouseAge","income1","income2","retireAge","endAge","pension","retirementPay","child1Mode","child1","child1BirthIn","child2Mode","child2","child2BirthIn","education","waitYears","futurePriceGrowth","futureInterest","futureLoanYears","waitSavings","waitRentGrowth","living","leisure","savingsTarget","cash","investments","inflation","returnRate","price","downPayment","interest","screeningInterest","loanYears","bonusAnnual","maintenance","parking","ownerAnnual","purchaseCost","rent","rentFee","rentAnnual","rentGrowth","homeGrowth","saleCost","homeFloor"];
 const initial = Object.fromEntries(ids.map(id => [id, document.getElementById(id).value]));
 const yen = value => `${Math.round(value / 10000).toLocaleString("ja-JP")}万円`;
 const signedYen = value => value < 0 ? `▲${yen(Math.abs(value))}` : yen(value);
@@ -36,6 +36,22 @@ function monthlyPayment(principal, annualRate, years) {
   const months = Math.max(1, years * 12);
   const r = annualRate / 12;
   return r === 0 ? principal / months : principal * r * Math.pow(1 + r, months) / (Math.pow(1 + r, months) - 1);
+}
+
+// 年間ボーナス返済額を年2回に分け、その現在価値を借入額から差し引いて
+// 通常月の返済額を算出する。同じ借入額の返済方法を振り分けるため、
+// ボーナス返済を入力しても年間返済額が単純に上乗せされない。
+function monthlyPaymentWithBonus(principal, annualRate, years, annualBonus) {
+  const months = Math.max(1, years * 12);
+  const r = annualRate / 12;
+  const halfBonus = Math.max(0, annualBonus) / 2;
+  let bonusPresentValue = 0;
+  for (let month = 6; month <= months; month += 6) {
+    bonusPresentValue += halfBonus / Math.pow(1 + r, month);
+  }
+  const monthlyPrincipal = Math.max(0, principal - bonusPresentValue);
+  const annuityFactor = r === 0 ? months : (1 - Math.pow(1 + r, -months)) / r;
+  return annuityFactor > 0 ? monthlyPrincipal / annuityFactor : 0;
 }
 
 function childCost(age, plan) {
@@ -107,7 +123,8 @@ function buildModel() {
   const purchaseCosts = price * pct("purchaseCost");
   const loan = Math.max(0, price - down);
   const rate = pct("interest") + rateStress;
-  const payment = monthlyPayment(loan, rate, num("loanYears"));
+  const bonusAnnual = num("bonusAnnual") * 10000;
+  const payment = monthlyPaymentWithBonus(loan, rate, num("loanYears"), bonusAnnual);
   const monthlyRate = rate / 12;
   const totalMonths = num("loanYears") * 12;
   let loanBalance = loan;
@@ -136,12 +153,15 @@ function buildModel() {
     const educationDetail=childAges.map((childAge,index)=>childStage(childAge)?`第${index+1}子：${childStage(childAge)}`:"").filter(Boolean).join("／");
 
     let annualLoan = 0;
-    for (let m = 0; m < 12 && y * 12 + m < totalMonths; m++) {
-      if (y === 0) break;
+    for (let m = 0; m < 12 && y * 12 + m < totalMonths && loanBalance > 0; m++) {
+      const elapsedMonth = y * 12 + m + 1;
+      const bonusPayment = elapsedMonth % 6 === 0 ? bonusAnnual / 2 : 0;
       const interestPart = loanBalance * monthlyRate;
-      const principalPart = Math.min(loanBalance, payment - interestPart);
+      const scheduledPayment = payment + bonusPayment;
+      const principalPart = Math.min(loanBalance, Math.max(0, scheduledPayment - interestPart));
+      const actualPayment = interestPart + principalPart;
       loanBalance = Math.max(0, loanBalance - principalPart);
-      annualLoan += payment;
+      annualLoan += actualPayment;
     }
     const ownerCosts = (num("maintenance") + num("parking")) * 120000 * Math.pow(1 + inflation, y) + num("ownerAnnual") * 10000 * Math.pow(1 + inflation, y);
     const purchaseHousing = annualLoan + ownerCosts;
