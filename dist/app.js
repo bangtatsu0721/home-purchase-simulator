@@ -6,6 +6,64 @@ const num = id => Number(document.getElementById(id).value || 0);
 const pct = id => num(id) / 100;
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const hasSpouse = () => document.getElementById("spouseStatus").value === "yes";
+const SAVED_PLANS_KEY = "homePurchaseSimulator.savedPlans.v1";
+
+function showToast(message) {
+  const toast=document.getElementById("toast");
+  toast.textContent=message;
+  toast.classList.add("show");
+  setTimeout(()=>toast.classList.remove("show"),2800);
+}
+
+function readSavedPlans() {
+  try { return JSON.parse(localStorage.getItem(SAVED_PLANS_KEY) || "{}"); }
+  catch { return {}; }
+}
+
+function writeSavedPlans(plans) {
+  localStorage.setItem(SAVED_PLANS_KEY, JSON.stringify(plans));
+}
+
+function refreshSavedPlanSelect(selectedName="") {
+  const select=document.getElementById("savedPlanSelect");
+  const plans=readSavedPlans();
+  const names=Object.keys(plans).sort((a,b)=>(plans[b].savedAt||"").localeCompare(plans[a].savedAt||""));
+  select.innerHTML=`<option value="">保存済みの条件を選択</option>`+names.map(name=>`<option value="${name.replaceAll("&","&amp;").replaceAll('"','&quot;').replaceAll("<","&lt;").replaceAll(">","&gt;")}">${name.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")}</option>`).join("");
+  if(selectedName&&plans[selectedName]) select.value=selectedName;
+}
+
+function saveCurrentPlan() {
+  const input=document.getElementById("saveName");
+  const name=input.value.trim();
+  if(!name){showToast("保存名を入力してください");input.focus();return;}
+  const plans=readSavedPlans();
+  if(plans[name]&&!confirm(`「${name}」を上書き保存しますか？`)) return;
+  plans[name]={savedAt:new Date().toISOString(),values:Object.fromEntries(ids.map(id=>[id,document.getElementById(id).value]))};
+  writeSavedPlans(plans);
+  refreshSavedPlanSelect(name);
+  showToast(`「${name}」を保存しました`);
+}
+
+function loadSelectedPlan() {
+  const name=document.getElementById("savedPlanSelect").value;
+  if(!name){showToast("呼び出す条件を選択してください");return;}
+  const saved=readSavedPlans()[name];
+  if(!saved?.values){showToast("保存データを読み込めませんでした");return;}
+  ids.forEach(id=>{if(saved.values[id]!==undefined) document.getElementById(id).value=saved.values[id]});
+  document.getElementById("saveName").value=name;
+  syncSpouseFields();syncChildFields();render();
+  showToast(`「${name}」を呼び出しました`);
+}
+
+function deleteSelectedPlan() {
+  const select=document.getElementById("savedPlanSelect"),name=select.value;
+  if(!name){showToast("削除する条件を選択してください");return;}
+  if(!confirm(`保存した「${name}」を削除しますか？`)) return;
+  const plans=readSavedPlans();delete plans[name];writeSavedPlans(plans);
+  refreshSavedPlanSelect();
+  if(document.getElementById("saveName").value===name) document.getElementById("saveName").value="";
+  showToast(`「${name}」を削除しました`);
+}
 
 function syncSpouseFields() {
   const enabled = hasSpouse();
@@ -374,7 +432,11 @@ function render() {
 
 let timer; ids.forEach(id=>{const element=document.getElementById(id);const update=()=>{if(id==="spouseStatus")syncSpouseFields();if(id.includes("child"))syncChildFields();clearTimeout(timer);timer=setTimeout(render,60)};element.addEventListener("input",update);if(element.tagName==="SELECT")element.addEventListener("change",update)});
 document.querySelectorAll(".tab").forEach(button=>button.addEventListener("click",()=>{document.querySelectorAll(".tab,.tab-panel").forEach(x=>x.classList.remove("active"));button.classList.add("active");document.getElementById(button.dataset.tab).classList.add("active");render()}));
-document.querySelectorAll(".help").forEach(button=>button.addEventListener("click",e=>{e.preventDefault();const toast=document.getElementById("toast");toast.textContent=button.dataset.help;toast.classList.add("show");setTimeout(()=>toast.classList.remove("show"),3500)}));
+document.querySelectorAll(".help").forEach(button=>button.addEventListener("click",e=>{e.preventDefault();showToast(button.dataset.help)}));
+document.getElementById("savePlanButton").addEventListener("click",saveCurrentPlan);
+document.getElementById("loadPlanButton").addEventListener("click",loadSelectedPlan);
+document.getElementById("deletePlanButton").addEventListener("click",deleteSelectedPlan);
+document.getElementById("saveName").addEventListener("keydown",event=>{if(event.key==="Enter") saveCurrentPlan()});
 document.getElementById("timingPresetButton").addEventListener("click",()=>{
   document.getElementById("waitYears").value=5;
   document.getElementById("futurePriceGrowth").value=2.0;
@@ -402,6 +464,7 @@ document.getElementById("resetButton").addEventListener("click",()=>{ids.forEach
 window.addEventListener("resize",()=>{clearTimeout(timer);timer=setTimeout(render,120)});
 syncSpouseFields();
 syncChildFields();
+refreshSavedPlanSelect();
 render();
 
 if (document.modelContext?.registerTool) {
