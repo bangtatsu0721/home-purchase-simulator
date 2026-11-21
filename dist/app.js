@@ -363,7 +363,12 @@ function render() {
   const ages=[65,75,85,num("endAge")].filter((v,i,list)=>v>=num("age")&&v<=num("endAge")&&list.indexOf(v)===i);
   document.getElementById("compareTable").innerHTML=ages.map(ageValue=>{const r=rows.find(x=>x.age===ageValue)||last;const offset=r.age-num("age");const cash=presentValue(r.purchaseAssets,offset);const home=presentValue(r.homeEquity,offset);const total=presentValue(r.purchaseTotal,offset);const rent=presentValue(r.rentAssets,offset);const diff=total-rent;return `<tr><td>${ageValue}歳</td><td>${signedYen(cash)}</td><td>${yen(home)}</td><td>${signedYen(total)}</td><td>${signedYen(rent)}</td><td class="${diff<0?'negative':'positive'}">${diff>=0?'+':''}${signedYen(diff)}</td></tr>`}).join("");
   renderTimingComparison(model);
-  document.getElementById("cashflowTable").innerHTML=rows.map(r=>`<tr><td>${r.age}歳</td><td>${yen(r.income)}</td><td>${yen(r.livingLeisure)}</td><td class="education-stage">${r.educationDetail||"—"}</td><td class="${r.education>0?'education-cost':''}">${yen(r.education)}</td><td>${yen(r.purchaseHousing)}</td><td class="${r.purchaseAnnual<0?'negative':''}">${signedYen(r.purchaseAnnual)}</td><td class="${r.purchaseAssets<0?'negative':''}">${signedYen(r.purchaseAssets)}</td></tr>`).join("");
+  document.getElementById("cashflowTable").innerHTML=rows.map(r=>{
+    const isShortage=r.purchaseAnnual<0&&r.purchaseAssets===0;
+    const balanceClass=r.purchaseAnnual>=0?'positive':isShortage?'negative':'drawdown';
+    const balanceText=r.purchaseAnnual>=0?`+${yen(r.purchaseAnnual)}`:isShortage?`不足 ${yen(Math.abs(r.purchaseAnnual))}`:`資産から ${yen(Math.abs(r.purchaseAnnual))} 補填`;
+    return `<tr><td>${r.age}歳</td><td>${yen(r.income)}</td><td>${yen(r.livingLeisure)}</td><td class="education-stage">${r.educationDetail||"—"}</td><td class="${r.education>0?'education-cost':''}">${yen(r.education)}</td><td>${yen(r.purchaseHousing)}</td><td class="${balanceClass}">${balanceText}</td><td>${signedYen(r.purchaseAssets)}</td></tr>`;
+  }).join("");
   requestAnimationFrame(()=>{drawChart(document.getElementById("assetChart"),rows,[{label:"手元の金融資産",color:"#2f75b5",get:r=>r.purchaseAssets}]);drawChart(document.getElementById("compareChart"),rows,[{label:"買った場合に残る合計（現在価値）",color:"#2f75b5",get:r=>presentValue(r.purchaseTotal,r.age-num("age"))},{label:"賃貸で手元に残るお金（現在価値）",color:"#7f8fa6",get:r=>presentValue(r.rentTotal,r.age-num("age"))}])});
 }
 
