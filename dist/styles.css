@@ -23,6 +23,8 @@
 .guide-cash:before{background:#2f75b5}.guide-rent:before{background:#7f8fa6}
 .table-heading{margin:19px 0 9px;color:var(--navy);font-size:.9rem}
 .positive{color:var(--green)!important;font-weight:800}
+.drawdown{color:#2f75b5!important;font-weight:800}
+.cashflow-note{display:flex;gap:12px;align-items:flex-start;margin:14px 0 0;padding:11px 13px;border-left:4px solid var(--blue);border-radius:6px;background:#f1f7fb;color:var(--navy);font-size:.78rem;line-height:1.6}.cashflow-note strong{flex:0 0 auto}.cashflow-note span{color:#536276}
 @media(max-width:760px){
   .comparison-answer{padding:14px}
   .comparison-answer strong{font-size:.92rem}
