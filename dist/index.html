@@ -6,7 +6,7 @@
   <meta name="description" content="住宅購入と賃貸継続を、生涯収支と総資産から比較するシミュレーター">
   <title>住宅購入安心度シミュレーター</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317365d'/%3E%3Cpath d='M13 31 32 15l19 16v21H38V38H26v14H13Z' fill='%23fff'/%3E%3Cpath d='M45 20v-6h6v11Z' fill='%239ac7aa'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261121-print-all-portrait">
+  <link rel="stylesheet" href="styles.css?v=20261122-living-breakdown">
 </head>
 <body>
   <header class="topbar">
@@ -94,12 +94,36 @@
         <summary>生活費・資産</summary>
         <div class="form-grid">
           <label class="field"><span>現在の月々の生活費＋住居費の合計</span><small>食費・光熱費などの生活費と、現在の家賃・共益費等をすべて合計した月額</small><div class="unit"><input id="living" type="number" value="27" min="0" step="1" aria-label="現在の生活費と住居費の合計（月額）"><b>万円/月</b></div></label>
-          <label class="field"><span>年間旅行・その他</span><div class="unit"><input id="leisure" type="number" value="55" min="0" step="5"><b>万円</b></div></label>
+          <label class="field"><span>現在の年間旅行・その他</span><div class="unit"><input id="leisure" type="number" value="55" min="0" step="5"><b>万円/年</b></div></label>
+          <label class="field"><span>旅行・その他の変更年齢①</span><small>この年齢以降、右の金額に変更</small><div class="unit"><input id="leisureAge1" type="number" value="65" min="18" max="100"><b>歳以降</b></div></label>
+          <label class="field"><span>変更後の年間旅行・その他①</span><div class="unit"><input id="leisureAfter1" type="number" value="27.5" min="0" step="2.5"><b>万円/年</b></div></label>
+          <label class="field"><span>旅行・その他の変更年齢②</span><small>さらに変更する場合。金額を空欄にすると未使用</small><div class="unit"><input id="leisureAge2" type="number" value="75" min="18" max="100"><b>歳以降</b></div></label>
+          <label class="field"><span>変更後の年間旅行・その他②</span><div class="unit"><input id="leisureAfter2" type="number" value="" min="0" step="2.5" placeholder="任意"><b>万円/年</b></div></label>
           <label class="field"><span>現在の預金</span><div class="unit"><input id="cash" type="number" value="800" min="0" step="50"><b>万円</b></div></label>
           <label class="field"><span>現在の投資資産</span><div class="unit"><input id="investments" type="number" value="200" min="0" step="50"><b>万円</b></div></label>
           <label class="field"><span>物価上昇率 <button class="help" data-help="生活費・旅行費などが毎年増える想定率です。">?</button></span><div class="unit"><input id="inflation" type="number" value="0.5" min="0" max="5" step="0.1"><b>%</b></div></label>
           <label class="field"><span>運用利回り <button class="help" data-help="年初のプラスの金融資産に対する想定運用益です。元本保証ではありません。">?</button></span><div class="unit"><input id="returnRate" type="number" value="1.5" min="0" max="8" step="0.1"><b>%</b></div></label>
         </div>
+        <details class="living-breakdown">
+          <summary>月々の生活費を項目別に入力する</summary>
+          <p class="living-breakdown-guide">入力単位はすべて万円／月です。1項目でも入力すると、項目合計に現在の家賃・共益費等を加え、上の「生活費＋住居費の合計」へ自動反映します。</p>
+          <div class="living-breakdown-grid">
+            <label class="field"><span>食費</span><div class="unit"><input id="food" type="number" value="0" min="0" step="0.1"><b>万円/月</b></div></label>
+            <label class="field"><span>水道・光熱費</span><div class="unit"><input id="utilities" type="number" value="0" min="0" step="0.1"><b>万円/月</b></div></label>
+            <label class="field"><span>通信費（スマホ・ネット）</span><div class="unit"><input id="communications" type="number" value="0" min="0" step="0.1"><b>万円/月</b></div></label>
+            <label class="field"><span>日用品費</span><div class="unit"><input id="dailyGoods" type="number" value="0" min="0" step="0.1"><b>万円/月</b></div></label>
+            <label class="field"><span>衣服・美容費</span><div class="unit"><input id="clothingBeauty" type="number" value="0" min="0" step="0.1"><b>万円/月</b></div></label>
+            <label class="field"><span>医療費</span><div class="unit"><input id="medical" type="number" value="0" min="0" step="0.1"><b>万円/月</b></div></label>
+            <label class="field"><span>保険料</span><div class="unit"><input id="insurance" type="number" value="0" min="0" step="0.1"><b>万円/月</b></div></label>
+            <label class="field"><span>交通費</span><div class="unit"><input id="transportation" type="number" value="0" min="0" step="0.1"><b>万円/月</b></div></label>
+            <label class="field"><span>車関連費（ガソリン・駐車場等）</span><div class="unit"><input id="carCosts" type="number" value="0" min="0" step="0.1"><b>万円/月</b></div></label>
+            <label class="field"><span>娯楽・レジャー費</span><div class="unit"><input id="entertainment" type="number" value="0" min="0" step="0.1"><b>万円/月</b></div></label>
+            <label class="field"><span>交際費</span><div class="unit"><input id="social" type="number" value="0" min="0" step="0.1"><b>万円/月</b></div></label>
+            <label class="field"><span>夫婦のお小遣い</span><div class="unit"><input id="allowance" type="number" value="0" min="0" step="0.1"><b>万円/月</b></div></label>
+            <label class="field"><span>その他・雑費</span><div class="unit"><input id="miscellaneous" type="number" value="0" min="0" step="0.1"><b>万円/月</b></div></label>
+          </div>
+          <div class="living-breakdown-total" id="livingBreakdownTotal"></div>
+        </details>
       </details>
 
       <details open>
@@ -250,6 +274,6 @@
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=20261121-rent-cashflow"></script>
+  <script src="app.js?v=20261122-living-breakdown"></script>
 </body>
 </html>
