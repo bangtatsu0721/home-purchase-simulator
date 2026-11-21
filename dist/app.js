@@ -1,4 +1,4 @@
-const ids = ["scenario","spouseStatus","age","spouseAge","income1","income2","retireAge","endAge","pension","retirementPay","child1Mode","child1","child1BirthIn","child2Mode","child2","child2BirthIn","education","waitYears","futurePriceGrowth","futureInterest","futureLoanYears","waitSavings","waitRentGrowth","living","leisure","savingsTarget","cash","investments","inflation","returnRate","price","downPayment","interest","screeningInterest","loanYears","bonusAnnual","maintenance","parking","ownerAnnual","purchaseCost","rent","rentFee","rentAnnual","rentGrowth","homeGrowth","saleCost","homeFloor"];
+const ids = ["scenario","spouseStatus","age","spouseAge","income1","income2","retireAge","endAge","pension","retirementPay","child1Mode","child1","child1BirthIn","child2Mode","child2","child2BirthIn","education","waitYears","futurePriceGrowth","futureInterest","futureLoanYears","waitSavings","waitRentGrowth","living","leisure","savingsTarget","cash","investments","inflation","returnRate","price","downPayment","interest","screeningInterest","loanYears","bonusAnnual","maintenance","parking","ownerAnnual","purchaseCost","rent","rentFee","rentSubsidy","rentSubsidyYears","rentAnnual","rentGrowth","homeGrowth","saleCost","homeFloor"];
 const initial = Object.fromEntries(ids.map(id => [id, document.getElementById(id).value]));
 const yen = value => `${Math.round(value / 10000).toLocaleString("ja-JP")}万円`;
 const signedYen = value => value < 0 ? `▲${yen(Math.abs(value))}` : yen(value);
@@ -143,7 +143,9 @@ function buildModel() {
     const income = currentAge < retireAge ? workingIncome : num("pension") * 10000;
     // 「毎月生活費」は現在の住居費込み。現在家賃を除いた生活費本体だけを
     // 購入・賃貸それぞれの住居費に加えることで、住居費の二重計上を防ぐ。
-    const currentHousing = (num("rent") + num("rentFee")) * 120000 + num("rentAnnual") * 10000;
+    const currentGrossRentMonthly = (num("rent") + num("rentFee")) * 10000;
+    const currentSubsidyMonthly = num("rentSubsidyYears") > 0 ? Math.min(currentGrossRentMonthly, num("rentSubsidy") * 10000) : 0;
+    const currentHousing = (currentGrossRentMonthly - currentSubsidyMonthly) * 12 + num("rentAnnual") * 10000;
     const nonHousingLiving = Math.max(0, num("living") * 120000 - currentHousing);
     const livingBase = currentAge < retireAge ? nonHousingLiving : nonHousingLiving * .78;
     const living = livingBase * Math.pow(1 + inflation, y);
@@ -165,7 +167,9 @@ function buildModel() {
     }
     const ownerCosts = (num("maintenance") + num("parking")) * 120000 * Math.pow(1 + inflation, y) + num("ownerAnnual") * 10000 * Math.pow(1 + inflation, y);
     const purchaseHousing = annualLoan + ownerCosts;
-    const rentHousing = (num("rent") + num("rentFee")) * 120000 * Math.pow(1 + pct("rentGrowth"), y) + num("rentAnnual") * 10000 * Math.pow(1 + inflation, y);
+    const grossRentMonthly = (num("rent") + num("rentFee")) * 10000 * Math.pow(1 + pct("rentGrowth"), y);
+    const subsidyMonthly = y < num("rentSubsidyYears") ? Math.min(grossRentMonthly, num("rentSubsidy") * 10000) : 0;
+    const rentHousing = (grossRentMonthly - subsidyMonthly) * 12 + num("rentAnnual") * 10000 * Math.pow(1 + inflation, y);
     const retirementPay = currentAge === retireAge ? num("retirementPay") * 10000 : 0;
     const mortgageCredit = y >= 1 && y <= 13 ? Math.min(loanBalance, 45_000_000) * .007 : 0;
     const purchaseAnnual = income + retirementPay + mortgageCredit - living - leisure - education - purchaseHousing;
@@ -194,14 +198,16 @@ function buildModel() {
   return {rows, payment, roomyPrice, safePrice, upperPrice, price, scenario};
 }
 
-function loanBalanceAfter(principal, annualRate, totalYears, elapsedYears) {
-  const payment=monthlyPayment(principal,annualRate,totalYears);
+function loanBalanceAfter(principal, annualRate, totalYears, elapsedYears, annualBonus=0) {
+  const payment=monthlyPaymentWithBonus(principal,annualRate,totalYears,annualBonus);
   const monthlyRate=annualRate/12;
   let balance=principal;
   const months=Math.min(totalYears*12,Math.max(0,elapsedYears*12));
-  for(let month=0;month<months;month++){
+  for(let month=0;month<months&&balance>0;month++){
     const interest=balance*monthlyRate;
-    balance=Math.max(0,balance-Math.max(0,payment-interest));
+    const bonusPayment=(month+1)%6===0?annualBonus/2:0;
+    const scheduledPayment=payment+bonusPayment;
+    balance=Math.max(0,balance-Math.max(0,scheduledPayment-interest));
   }
   return balance;
 }
@@ -212,20 +218,24 @@ function renderTimingComparison(model) {
   const currentDown=num("downPayment")*10000;
   const currentLoan=Math.max(0,currentPrice-currentDown);
   const currentRate=pct("interest");
-  const currentPayment=monthlyPayment(currentLoan,currentRate,num("loanYears"));
+  const annualBonus=num("bonusAnnual")*10000;
+  const currentPayment=monthlyPaymentWithBonus(currentLoan,currentRate,num("loanYears"),annualBonus);
   const growth=pct("futurePriceGrowth");
   const futurePrice=currentPrice*Math.pow(1+growth,years);
   const futureRate=pct("futureInterest");
   const savedDuringWait=num("waitSavings")*10000*years;
   const futureDown=Math.min(futurePrice,currentDown+savedDuringWait);
   const futureLoan=Math.max(0,futurePrice-futureDown);
-  const futurePayment=monthlyPayment(futureLoan,futureRate,num("futureLoanYears"));
-  const currentBalance=loanBalanceAfter(currentLoan,currentRate,num("loanYears"),years);
+  const futurePayment=monthlyPaymentWithBonus(futureLoan,futureRate,num("futureLoanYears"),annualBonus);
+  const currentBalance=loanBalanceAfter(currentLoan,currentRate,num("loanYears"),years,annualBonus);
   const futureHomeValue=currentPrice*Math.pow(1+growth,years);
   const currentEquity=Math.max(0,futureHomeValue*(1-pct("saleCost"))-currentBalance);
   let rentPaid=0;
-  const firstYearRent=(num("rent")+num("rentFee"))*120000+num("rentAnnual")*10000;
-  for(let year=0;year<years;year++) rentPaid+=firstYearRent*Math.pow(1+pct("waitRentGrowth"),year);
+  for(let year=0;year<years;year++){
+    const grossMonthlyRent=(num("rent")+num("rentFee"))*10000*Math.pow(1+pct("waitRentGrowth"),year);
+    const monthlySubsidy=year<num("rentSubsidyYears")?Math.min(grossMonthlyRent,num("rentSubsidy")*10000):0;
+    rentPaid+=(grossMonthlyRent-monthlySubsidy)*12+num("rentAnnual")*10000*Math.pow(1+pct("inflation"),year);
+  }
   const priceDiff=futurePrice-currentPrice;
   const loanDiff=futureLoan-currentLoan;
   const paymentDiff=futurePayment-currentPayment;
