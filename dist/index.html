@@ -6,7 +6,7 @@
   <meta name="description" content="住宅購入と賃貸継続を、生涯収支と総資産から比較するシミュレーター">
   <title>住宅購入安心度シミュレーター</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317365d'/%3E%3Cpath d='M13 31 32 15l19 16v21H38V38H26v14H13Z' fill='%23fff'/%3E%3Cpath d='M45 20v-6h6v11Z' fill='%239ac7aa'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261121-print-charts">
+  <link rel="stylesheet" href="styles.css?v=20261121-print-cashflow-realvalue">
 </head>
 <body>
   <header class="topbar">
@@ -155,13 +155,13 @@
       </section>
 
       <section class="tab-panel" id="compare">
-        <div class="section-title"><div><h3>買った場合と借り続けた場合、最後に何が残る？</h3><p>試算終了年齢の時点で「使えるお金」と「住まいの価値」を分けて比べます。</p></div></div>
+        <div class="section-title"><div><h3>買った場合と借り続けた場合、最後に何が残る？</h3><p>試算終了年齢の金額を現在の物価に換算し、「使えるお金」と「住まいの価値」を分けて比べます。</p></div></div>
         <div class="comparison-answer" id="comparisonAnswer"></div>
         <div class="compare-cards consumer">
           <article class="buy">
             <span>家を買った場合</span>
             <strong id="buyTotal"></strong>
-            <small>手元のお金 ＋ 家を売った場合に残る想定額</small>
+            <small>現在価値：手元のお金 ＋ 家を売った場合に残る想定額</small>
             <dl>
               <div><dt>手元に残るお金</dt><dd id="buyCash"></dd></div>
               <div><dt>家を売った場合に残る想定額</dt><dd id="buyHome"></dd></div>
@@ -171,7 +171,7 @@
           <article class="rent">
             <span>賃貸を続けた場合</span>
             <strong id="rentTotal"></strong>
-            <small>手元に残るお金</small>
+            <small>現在価値：手元に残るお金</small>
             <dl>
               <div><dt>手元に残るお金</dt><dd id="rentCash"></dd></div>
               <div><dt>住まいとして残る資産</dt><dd>0万円</dd></div>
@@ -180,9 +180,9 @@
         </div>
         <div class="plain-guide"><span class="guide-cash">青線＝買った場合に残る合計</span><span class="guide-rent">灰線＝賃貸で手元に残るお金</span></div>
         <div class="chart-wrap"><canvas id="compareChart" role="img" aria-label="購入と賃貸で将来残る金額の比較グラフ"></canvas></div>
-        <h4 class="table-heading">節目の年齢で比べる</h4>
+        <h4 class="table-heading">節目の年齢で比べる（現在の物価に換算）</h4>
         <div class="age-table-wrap"><table><thead><tr><th>年齢</th><th>買った場合の手元資金</th><th>家の価値※</th><th>買った場合の合計</th><th>賃貸の手元資金</th><th>差額</th></tr></thead><tbody id="compareTable"></tbody></table></div>
-        <div class="explain-box neutral"><strong>※「家の価値」の考え方</strong><p>その年に家を売ったと仮定して、想定売却価格から売却費用と残りの住宅ローンを引いた金額です。実際の売却価格や売却時期を保証するものではありません。</p><p><b>ポイント：</b>手元のお金はすぐ使えますが、家の価値は売却して初めて現金になります。性質の違うお金なので、内訳もあわせて確認してください。</p></div>
+        <div class="explain-box neutral"><strong>※比較金額の考え方</strong><p>将来の金額は、入力した物価上昇率を使って現在の物価に換算しています。投資利回りは「現在の投資資産」にだけ適用し、預金や毎年の黒字を全額運用する想定にはしていません。</p><p>「家の価値」は、その年に家を売ったと仮定して、想定売却価格から売却費用と残りの住宅ローンを引いた金額です。実際の売却価格や売却時期を保証するものではありません。</p><p><b>ポイント：</b>手元のお金はすぐ使えますが、家の価値は売却して初めて現金になります。性質の違うお金なので、内訳もあわせて確認してください。</p></div>
       </section>
 
       <section class="tab-panel" id="timing">
@@ -233,6 +233,6 @@
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=20261121-print-charts"></script>
+  <script src="app.js?v=20261121-print-cashflow-realvalue"></script>
 </body>
 </html>
