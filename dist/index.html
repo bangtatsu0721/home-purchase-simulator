@@ -98,6 +98,7 @@
           <label class="field"><span>当初金利</span><div class="unit"><input id="interest" type="number" value="0.8" min="0" max="10" step="0.05"><b>%</b></div></label>
           <label class="field"><span>審査金利</span><div class="unit"><input id="screeningInterest" type="number" value="3.3" min="0" max="15" step="0.1"><b>%</b></div></label>
           <label class="field"><span>返済期間</span><div class="unit"><input id="loanYears" type="number" value="40" min="5" max="50"><b>年</b></div></label>
+          <label class="field"><span>ボーナス返済額（年間合計）</span><small>年2回払いの場合は、2回分を合計した金額</small><div class="unit"><input id="bonusAnnual" type="number" value="0" min="0" step="10"><b>万円/年</b></div></label>
           <label class="field"><span>管理費・修繕積立金</span><div class="unit"><input id="maintenance" type="number" value="2.3" min="0" step="0.1"><b>万円/月</b></div></label>
           <label class="field"><span>駐車場・その他住宅費</span><div class="unit"><input id="parking" type="number" value="1.5" min="0" step="0.1"><b>万円/月</b></div></label>
           <label class="field"><span>固定資産税・保険</span><div class="unit"><input id="ownerAnnual" type="number" value="21" min="0" step="1"><b>万円/年</b></div></label>
@@ -231,6 +232,6 @@
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=20261121-buy-now-later"></script>
+  <script src="app.js?v=20261121-bonus-payment"></script>
 </body>
 </html>
