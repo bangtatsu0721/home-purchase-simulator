@@ -6,7 +6,7 @@
   <meta name="description" content="住宅購入と賃貸継続を、生涯収支と総資産から比較するシミュレーター">
   <title>住宅購入安心度シミュレーター</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317365d'/%3E%3Cpath d='M13 31 32 15l19 16v21H38V38H26v14H13Z' fill='%23fff'/%3E%3Cpath d='M45 20v-6h6v11Z' fill='%239ac7aa'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261121-drawdown-label">
+  <link rel="stylesheet" href="styles.css?v=20261121-named-saves">
 </head>
 <body>
   <header class="topbar">
@@ -29,6 +29,19 @@
         </div>
         <div class="privacy-note"><span></span>入力内容は端末内だけで計算</div>
       </div>
+
+      <section class="save-manager" aria-labelledby="saveManagerTitle">
+        <div class="save-manager-heading"><strong id="saveManagerTitle">条件を保存・呼び出し</strong><small>この端末内に保存されます</small></div>
+        <div class="save-create-row">
+          <input id="saveName" type="text" maxlength="40" placeholder="例：田中様・Dタイプ" aria-label="保存する条件の名前">
+          <button id="savePlanButton" type="button">名前を付けて保存</button>
+        </div>
+        <div class="save-load-row">
+          <select id="savedPlanSelect" aria-label="保存済みの条件"><option value="">保存済みの条件を選択</option></select>
+          <button id="loadPlanButton" type="button">呼び出す</button>
+          <button class="delete-save" id="deletePlanButton" type="button">削除</button>
+        </div>
+      </section>
 
       <label class="field scenario-field">
         <span>確認するシナリオ</span>
@@ -234,6 +247,6 @@
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=20261121-drawdown-label"></script>
+  <script src="app.js?v=20261121-named-saves"></script>
 </body>
 </html>
