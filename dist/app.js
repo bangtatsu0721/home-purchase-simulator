@@ -175,13 +175,15 @@ function buildModel() {
     const mortgageCredit = y >= 1 && y <= 13 ? Math.min(loanBalance, 45_000_000) * .007 : 0;
     const purchaseAnnual = income + retirementPay + mortgageCredit - living - leisure - education - purchaseHousing;
     const rentAnnual = income + retirementPay - living - leisure - education - rentHousing;
+    const savingsGoal = currentAge < retireAge ? num("savingsTarget") * 10000 : 0;
+    const savingsGap = purchaseAnnual - savingsGoal;
     // 金融資産は0円を下限とする。年間赤字は生涯収支で確認し、
     // 現実に存在しない「マイナス金融資産」を90歳まで累積させない。
     purchaseAssets = Math.max(0, purchaseAssets + purchaseAnnual + Math.max(0, purchaseAssets) * investmentReturn);
     rentAssets = Math.max(0, rentAssets + rentAnnual + Math.max(0, rentAssets) * investmentReturn);
     const homeValue = Math.max(price * pct("homeFloor"), price * Math.pow(1 + pct("homeGrowth"), y));
     const homeEquity = Math.max(0, homeValue * (1 - pct("saleCost")) - loanBalance);
-    rows.push({age: currentAge, income, livingLeisure: living + leisure, education, educationDetail, purchaseHousing, purchaseAnnual, purchaseAssets, rentHousing, rentAnnual, rentAssets, homeValue, loanBalance, homeEquity, purchaseTotal: purchaseAssets + homeEquity, rentTotal: rentAssets});
+    rows.push({age: currentAge, income, livingLeisure: living + leisure, education, educationDetail, purchaseHousing, purchaseAnnual, savingsGoal, savingsGap, purchaseAssets, rentHousing, rentAnnual, rentAssets, homeValue, loanBalance, homeEquity, purchaseTotal: purchaseAssets + homeEquity, rentTotal: rentAssets});
   }
 
   const grossAnnual = (num("income1") + (hasSpouse() ? num("income2") : 0)) * 10000;
@@ -336,7 +338,7 @@ function render() {
   const ages=[65,75,85,num("endAge")].filter((v,i,list)=>v>=num("age")&&v<=num("endAge")&&list.indexOf(v)===i);
   document.getElementById("compareTable").innerHTML=ages.map(ageValue=>{const r=rows.find(x=>x.age===ageValue)||last;const diff=r.purchaseTotal-r.rentTotal;return `<tr><td>${ageValue}歳</td><td class="${r.purchaseAssets<0?'negative':''}">${signedYen(r.purchaseAssets)}</td><td>${yen(r.homeEquity)}</td><td class="${r.purchaseTotal<0?'negative':''}">${signedYen(r.purchaseTotal)}</td><td class="${r.rentAssets<0?'negative':''}">${signedYen(r.rentAssets)}</td><td class="${diff<0?'negative':'positive'}">${diff>=0?'+':''}${signedYen(diff)}</td></tr>`}).join("");
   renderTimingComparison(model);
-  document.getElementById("cashflowTable").innerHTML=rows.map(r=>`<tr><td>${r.age}歳</td><td>${yen(r.income)}</td><td>${yen(r.livingLeisure)}</td><td class="education-stage">${r.educationDetail||"—"}</td><td class="${r.education>0?'education-cost':''}">${yen(r.education)}</td><td>${yen(r.purchaseHousing)}</td><td class="${r.purchaseAnnual<0?'negative':''}">${signedYen(r.purchaseAnnual)}</td><td class="${r.purchaseAssets<0?'negative':''}">${signedYen(r.purchaseAssets)}</td></tr>`).join("");
+  document.getElementById("cashflowTable").innerHTML=rows.map(r=>{const goalStatus=r.age>=num("retireAge")?`<span>対象外</span>`:r.purchaseAnnual<0?`<span class="negative">年間赤字</span>`:r.savingsGap>=0?`<span class="positive">目標達成 ＋${yen(r.savingsGap)}</span>`:`<span class="goal-short">目標まであと${yen(-r.savingsGap)}</span>`;return `<tr><td>${r.age}歳</td><td>${yen(r.income)}</td><td>${yen(r.livingLeisure)}</td><td class="education-stage">${r.educationDetail||"—"}</td><td class="${r.education>0?'education-cost':''}">${yen(r.education)}</td><td>${yen(r.purchaseHousing)}</td><td class="${r.purchaseAnnual<0?'negative':''}">${signedYen(r.purchaseAnnual)}</td><td>${goalStatus}</td><td class="${r.purchaseAssets<0?'negative':''}">${signedYen(r.purchaseAssets)}</td></tr>`}).join("");
   requestAnimationFrame(()=>{drawChart(document.getElementById("assetChart"),rows,[{label:"手元の金融資産",color:"#2f75b5",get:r=>r.purchaseAssets}]);drawChart(document.getElementById("compareChart"),rows,[{label:"買った場合に残る合計",color:"#2f75b5",get:r=>r.purchaseTotal},{label:"賃貸で手元に残るお金",color:"#7f8fa6",get:r=>r.rentTotal}])});
 }
 
