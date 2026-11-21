@@ -1,4 +1,5 @@
-const ids = ["scenario","spouseStatus","age","spouseAge","income1","income2","retireAge","endAge","pension","retirementPay","child1Mode","child1","child1BirthIn","child2Mode","child2","child2BirthIn","education","waitYears","futurePriceGrowth","futureInterest","futureLoanYears","waitSavings","waitRentGrowth","living","leisure","cash","investments","inflation","returnRate","price","downPayment","interest","screeningInterest","loanYears","bonusAnnual","maintenance","parking","ownerAnnual","purchaseCost","rent","rentFee","rentSubsidy","rentSubsidyYears","rentAnnual","rentGrowth","homeGrowth","saleCost","homeFloor"];
+const livingDetailIds = ["food","utilities","communications","dailyGoods","clothingBeauty","medical","insurance","transportation","carCosts","entertainment","social","allowance","miscellaneous"];
+const ids = ["scenario","spouseStatus","age","spouseAge","income1","income2","retireAge","endAge","pension","retirementPay","child1Mode","child1","child1BirthIn","child2Mode","child2","child2BirthIn","education","waitYears","futurePriceGrowth","futureInterest","futureLoanYears","waitSavings","waitRentGrowth","living",...livingDetailIds,"leisure","leisureAge1","leisureAfter1","leisureAge2","leisureAfter2","cash","investments","inflation","returnRate","price","downPayment","interest","screeningInterest","loanYears","bonusAnnual","maintenance","parking","ownerAnnual","purchaseCost","rent","rentFee","rentSubsidy","rentSubsidyYears","rentAnnual","rentGrowth","homeGrowth","saleCost","homeFloor"];
 const initial = Object.fromEntries(ids.map(id => [id, document.getElementById(id).value]));
 const yen = value => `${Math.round(value / 10000).toLocaleString("ja-JP")}万円`;
 const signedYen = value => value < 0 ? `▲${yen(Math.abs(value))}` : yen(value);
@@ -51,7 +52,7 @@ function loadSelectedPlan() {
   if(!saved?.values){showToast("保存データを読み込めませんでした");return;}
   ids.forEach(id=>{if(saved.values[id]!==undefined) document.getElementById(id).value=saved.values[id]});
   document.getElementById("saveName").value=name;
-  syncSpouseFields();syncChildFields();render();
+  syncSpouseFields();syncChildFields();syncLivingFromBreakdown();render();
   showToast(`「${name}」を呼び出しました`);
 }
 
@@ -73,6 +74,22 @@ function syncSpouseFields() {
     input.setAttribute("aria-disabled", String(!enabled));
     input.closest(".field").style.opacity = enabled ? "1" : ".45";
   });
+}
+
+function currentHousingAnnual() {
+  const grossMonthly=(num("rent")+num("rentFee"))*10000;
+  const subsidyMonthly=num("rentSubsidyYears")>0?Math.min(grossMonthly,num("rentSubsidy")*10000):0;
+  return (grossMonthly-subsidyMonthly)*12+num("rentAnnual")*10000;
+}
+
+function syncLivingFromBreakdown() {
+  const detailTotal=livingDetailIds.reduce((total,id)=>total+num(id),0);
+  const summary=document.getElementById("livingBreakdownTotal");
+  if(detailTotal<=0){summary.textContent="内訳を入力すると、現在の住居費を加えた合計が上の概算欄へ自動反映されます。";return;}
+  const housingMonthly=currentHousingAnnual()/120000;
+  const totalMonthly=detailTotal+housingMonthly;
+  document.getElementById("living").value=Number(totalMonthly.toFixed(2));
+  summary.textContent=`生活費 ${detailTotal.toLocaleString("ja-JP",{maximumFractionDigits:2})}万円 ＋ 現在の住居費 ${housingMonthly.toLocaleString("ja-JP",{maximumFractionDigits:2})}万円 ＝ 合計 ${totalMonthly.toLocaleString("ja-JP",{maximumFractionDigits:2})}万円／月`;
 }
 
 function takeHome(gross) {
@@ -206,13 +223,14 @@ function buildModel() {
     const income = currentAge < retireAge ? workingIncome : num("pension") * 10000 * pensionIndex;
     // 「毎月生活費」は現在の住居費込み。現在家賃を除いた生活費本体だけを
     // 購入・賃貸それぞれの住居費に加えることで、住居費の二重計上を防ぐ。
-    const currentGrossRentMonthly = (num("rent") + num("rentFee")) * 10000;
-    const currentSubsidyMonthly = num("rentSubsidyYears") > 0 ? Math.min(currentGrossRentMonthly, num("rentSubsidy") * 10000) : 0;
-    const currentHousing = (currentGrossRentMonthly - currentSubsidyMonthly) * 12 + num("rentAnnual") * 10000;
+    const currentHousing = currentHousingAnnual();
     const nonHousingLiving = Math.max(0, num("living") * 120000 - currentHousing);
     const livingBase = currentAge < retireAge ? nonHousingLiving : nonHousingLiving * .70;
     const living = livingBase * Math.pow(1 + inflation, y);
-    const leisure = num("leisure") * 10000 * (currentAge < retireAge ? 1 : .5) * Math.pow(1 + inflation, y);
+    let leisureAnnualMan=num("leisure");
+    if(document.getElementById("leisureAfter1").value!==""&&currentAge>=num("leisureAge1")) leisureAnnualMan=num("leisureAfter1");
+    if(document.getElementById("leisureAfter2").value!==""&&currentAge>=num("leisureAge2")) leisureAnnualMan=num("leisureAfter2");
+    const leisure = leisureAnnualMan * 10000 * Math.pow(1 + inflation, y);
     const childAges=[childAgeAtYear(childProfile(1),y),childAgeAtYear(childProfile(2),y)];
     const education = childAges.reduce((total,childAge)=>total+childCost(childAge,document.getElementById("education").value),0);
     const educationDetail=childAges.map((childAge,index)=>childStage(childAge)?`第${index+1}子：${childStage(childAge)}`:"").filter(Boolean).join("／");
@@ -454,7 +472,7 @@ function render() {
   requestAnimationFrame(()=>{drawChart(document.getElementById("assetChart"),rows,[{label:"手元の金融資産",color:"#2f75b5",get:r=>r.purchaseAssets}]);drawChart(document.getElementById("compareChart"),rows,[{label:"買った場合に残る合計（現在価値）",color:"#2f75b5",get:r=>presentValue(r.purchaseTotal,r.age-num("age"))},{label:"賃貸で手元に残るお金（現在価値）",color:"#7f8fa6",get:r=>presentValue(r.rentTotal,r.age-num("age"))}])});
 }
 
-let timer; ids.forEach(id=>{const element=document.getElementById(id);const update=()=>{if(id==="spouseStatus")syncSpouseFields();if(id.includes("child"))syncChildFields();if(id==="waitYears")applyTimingReferenceValues();clearTimeout(timer);timer=setTimeout(render,60)};element.addEventListener("input",update);if(element.tagName==="SELECT")element.addEventListener("change",update)});
+let timer; ids.forEach(id=>{const element=document.getElementById(id);const update=()=>{if(id==="spouseStatus")syncSpouseFields();if(id.includes("child"))syncChildFields();if(id==="waitYears")applyTimingReferenceValues();if(livingDetailIds.includes(id)||["rent","rentFee","rentSubsidy","rentSubsidyYears","rentAnnual"].includes(id))syncLivingFromBreakdown();clearTimeout(timer);timer=setTimeout(render,60)};element.addEventListener("input",update);if(element.tagName==="SELECT")element.addEventListener("change",update)});
 document.querySelectorAll(".tab").forEach(button=>button.addEventListener("click",()=>{document.querySelectorAll(".tab,.tab-panel").forEach(x=>x.classList.remove("active"));button.classList.add("active");document.getElementById(button.dataset.tab).classList.add("active");render()}));
 document.querySelectorAll(".help").forEach(button=>button.addEventListener("click",e=>{e.preventDefault();showToast(button.dataset.help)}));
 document.getElementById("savePlanButton").addEventListener("click",saveCurrentPlan);
@@ -483,10 +501,11 @@ document.getElementById("printButton").addEventListener("click",()=>{
 });
 window.addEventListener("beforeprint",preparePrintCharts);
 window.addEventListener("afterprint",restoreScreenCharts);
-document.getElementById("resetButton").addEventListener("click",()=>{ids.forEach(id=>document.getElementById(id).value=initial[id]);syncSpouseFields();render()});
+document.getElementById("resetButton").addEventListener("click",()=>{ids.forEach(id=>document.getElementById(id).value=initial[id]);syncSpouseFields();syncLivingFromBreakdown();render()});
 window.addEventListener("resize",()=>{clearTimeout(timer);timer=setTimeout(render,120)});
 syncSpouseFields();
 syncChildFields();
+syncLivingFromBreakdown();
 refreshSavedPlanSelect();
 render();
 
