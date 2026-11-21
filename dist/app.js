@@ -128,8 +128,12 @@ function buildModel() {
   const monthlyRate = rate / 12;
   const totalMonths = num("loanYears") * 12;
   let loanBalance = loan;
-  let purchaseAssets = num("cash") * 10000 + num("investments") * 10000 - down - purchaseCosts;
-  let rentAssets = num("cash") * 10000 + num("investments") * 10000;
+  const initialInvestment = num("investments") * 10000;
+  const initialPurchaseTotal = num("cash") * 10000 + initialInvestment - down - purchaseCosts;
+  let purchaseInvestments = Math.min(initialInvestment, Math.max(0, initialPurchaseTotal));
+  let purchaseCash = Math.max(0, initialPurchaseTotal - purchaseInvestments);
+  let rentInvestments = initialInvestment;
+  let rentCash = num("cash") * 10000;
   const inflation = pct("inflation"), investmentReturn = pct("returnRate");
   const rows = [];
 
@@ -175,10 +179,26 @@ function buildModel() {
     const mortgageCredit = y >= 1 && y <= 13 ? Math.min(loanBalance, 45_000_000) * .007 : 0;
     const purchaseAnnual = income + retirementPay + mortgageCredit - living - leisure - education - purchaseHousing;
     const rentAnnual = income + retirementPay - living - leisure - education - rentHousing;
-    // 金融資産は0円を下限とする。年間赤字は生涯収支で確認し、
-    // 現実に存在しない「マイナス金融資産」を90歳まで累積させない。
-    purchaseAssets = Math.max(0, purchaseAssets + purchaseAnnual + Math.max(0, purchaseAssets) * investmentReturn);
-    rentAssets = Math.max(0, rentAssets + rentAnnual + Math.max(0, rentAssets) * investmentReturn);
+    // 利回りは投資資産にだけ適用する。預金や毎年の黒字まで
+    // 自動的に全額運用され続ける前提にはしない。
+    purchaseInvestments *= 1 + investmentReturn;
+    rentInvestments *= 1 + investmentReturn;
+    purchaseCash += purchaseAnnual;
+    rentCash += rentAnnual;
+    if (purchaseCash < 0) {
+      const withdrawal = Math.min(purchaseInvestments, -purchaseCash);
+      purchaseInvestments -= withdrawal;
+      purchaseCash += withdrawal;
+    }
+    if (rentCash < 0) {
+      const withdrawal = Math.min(rentInvestments, -rentCash);
+      rentInvestments -= withdrawal;
+      rentCash += withdrawal;
+    }
+    purchaseCash = Math.max(0, purchaseCash);
+    rentCash = Math.max(0, rentCash);
+    const purchaseAssets = purchaseCash + purchaseInvestments;
+    const rentAssets = rentCash + rentInvestments;
     const homeValue = Math.max(price * pct("homeFloor"), price * Math.pow(1 + pct("homeGrowth"), y));
     const homeEquity = Math.max(0, homeValue * (1 - pct("saleCost")) - loanBalance);
     rows.push({age: currentAge, income, livingLeisure: living + leisure, education, educationDetail, purchaseHousing, purchaseAnnual, purchaseAssets, rentHousing, rentAnnual, rentAssets, homeValue, loanBalance, homeEquity, purchaseTotal: purchaseAssets + homeEquity, rentTotal: rentAssets});
@@ -318,12 +338,19 @@ function render() {
   document.getElementById("upperRule").textContent=`額面年収40％・審査金利${screeningRateLabel}％`;
   const badge=document.getElementById("shortageBadge");badge.textContent=shortage?`${shortage.age}歳ごろに手元資金を確認`:`${num("endAge")}歳までプラス`;badge.className=shortage?"warning":"";
   document.getElementById("assetExplanation").innerHTML=shortage?`<strong>収支確認の目安</strong><br>${shortage.age}歳ごろに手元資金が0円となる試算です。マイナス資産としては累積せず、赤字になる年度は「生涯収支」で確認できます。`:`<strong>手元資金について</strong><br>${num("endAge")}歳まで、預貯金・投資資産を維持できる試算です。`;
-  document.getElementById("buyTotal").textContent=yen(last.purchaseTotal);
-  document.getElementById("rentTotal").textContent=signedYen(last.rentTotal);
-  document.getElementById("buyCash").textContent=signedYen(last.purchaseAssets);
-  document.getElementById("buyHome").textContent=yen(last.homeEquity);
-  document.getElementById("rentCash").textContent=signedYen(last.rentAssets);
-  const finalDifference=last.purchaseTotal-last.rentTotal;
+  const presentValue=(value,yearOffset)=>value/Math.pow(1+pct("inflation"),yearOffset);
+  const finalYearOffset=last.age-num("age");
+  const buyTotalPresent=presentValue(last.purchaseTotal,finalYearOffset);
+  const rentTotalPresent=presentValue(last.rentTotal,finalYearOffset);
+  const buyCashPresent=presentValue(last.purchaseAssets,finalYearOffset);
+  const buyHomePresent=presentValue(last.homeEquity,finalYearOffset);
+  const rentCashPresent=presentValue(last.rentAssets,finalYearOffset);
+  document.getElementById("buyTotal").textContent=yen(buyTotalPresent);
+  document.getElementById("rentTotal").textContent=signedYen(rentTotalPresent);
+  document.getElementById("buyCash").textContent=signedYen(buyCashPresent);
+  document.getElementById("buyHome").textContent=yen(buyHomePresent);
+  document.getElementById("rentCash").textContent=signedYen(rentCashPresent);
+  const finalDifference=buyTotalPresent-rentTotalPresent;
   const comparisonAnswer=document.getElementById("comparisonAnswer");
   if(Math.abs(finalDifference)<1){
     comparisonAnswer.innerHTML=`<strong>${last.age}歳時点では、ほぼ同じ結果です</strong><span>購入と賃貸で、将来残る金額の差はほとんどありません。</span>`;
@@ -334,10 +361,10 @@ function render() {
   }
   comparisonAnswer.className=`comparison-answer ${finalDifference>=0?'buy-lead':'rent-lead'}`;
   const ages=[65,75,85,num("endAge")].filter((v,i,list)=>v>=num("age")&&v<=num("endAge")&&list.indexOf(v)===i);
-  document.getElementById("compareTable").innerHTML=ages.map(ageValue=>{const r=rows.find(x=>x.age===ageValue)||last;const diff=r.purchaseTotal-r.rentTotal;return `<tr><td>${ageValue}歳</td><td class="${r.purchaseAssets<0?'negative':''}">${signedYen(r.purchaseAssets)}</td><td>${yen(r.homeEquity)}</td><td class="${r.purchaseTotal<0?'negative':''}">${signedYen(r.purchaseTotal)}</td><td class="${r.rentAssets<0?'negative':''}">${signedYen(r.rentAssets)}</td><td class="${diff<0?'negative':'positive'}">${diff>=0?'+':''}${signedYen(diff)}</td></tr>`}).join("");
+  document.getElementById("compareTable").innerHTML=ages.map(ageValue=>{const r=rows.find(x=>x.age===ageValue)||last;const offset=r.age-num("age");const cash=presentValue(r.purchaseAssets,offset);const home=presentValue(r.homeEquity,offset);const total=presentValue(r.purchaseTotal,offset);const rent=presentValue(r.rentAssets,offset);const diff=total-rent;return `<tr><td>${ageValue}歳</td><td>${signedYen(cash)}</td><td>${yen(home)}</td><td>${signedYen(total)}</td><td>${signedYen(rent)}</td><td class="${diff<0?'negative':'positive'}">${diff>=0?'+':''}${signedYen(diff)}</td></tr>`}).join("");
   renderTimingComparison(model);
   document.getElementById("cashflowTable").innerHTML=rows.map(r=>`<tr><td>${r.age}歳</td><td>${yen(r.income)}</td><td>${yen(r.livingLeisure)}</td><td class="education-stage">${r.educationDetail||"—"}</td><td class="${r.education>0?'education-cost':''}">${yen(r.education)}</td><td>${yen(r.purchaseHousing)}</td><td class="${r.purchaseAnnual<0?'negative':''}">${signedYen(r.purchaseAnnual)}</td><td class="${r.purchaseAssets<0?'negative':''}">${signedYen(r.purchaseAssets)}</td></tr>`).join("");
-  requestAnimationFrame(()=>{drawChart(document.getElementById("assetChart"),rows,[{label:"手元の金融資産",color:"#2f75b5",get:r=>r.purchaseAssets}]);drawChart(document.getElementById("compareChart"),rows,[{label:"買った場合に残る合計",color:"#2f75b5",get:r=>r.purchaseTotal},{label:"賃貸で手元に残るお金",color:"#7f8fa6",get:r=>r.rentTotal}])});
+  requestAnimationFrame(()=>{drawChart(document.getElementById("assetChart"),rows,[{label:"手元の金融資産",color:"#2f75b5",get:r=>r.purchaseAssets}]);drawChart(document.getElementById("compareChart"),rows,[{label:"買った場合に残る合計（現在価値）",color:"#2f75b5",get:r=>presentValue(r.purchaseTotal,r.age-num("age"))},{label:"賃貸で手元に残るお金（現在価値）",color:"#7f8fa6",get:r=>presentValue(r.rentTotal,r.age-num("age"))}])});
 }
 
 let timer; ids.forEach(id=>{const element=document.getElementById(id);const update=()=>{if(id==="spouseStatus")syncSpouseFields();if(id.includes("child"))syncChildFields();clearTimeout(timer);timer=setTimeout(render,60)};element.addEventListener("input",update);if(element.tagName==="SELECT")element.addEventListener("change",update)});
