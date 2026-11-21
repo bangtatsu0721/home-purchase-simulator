@@ -6,7 +6,7 @@
   <meta name="description" content="住宅購入と賃貸継続を、生涯収支と総資産から比較するシミュレーター">
   <title>住宅購入安心度シミュレーター</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317365d'/%3E%3Cpath d='M13 31 32 15l19 16v21H38V38H26v14H13Z' fill='%23fff'/%3E%3Cpath d='M45 20v-6h6v11Z' fill='%239ac7aa'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261121-future-children">
+  <link rel="stylesheet" href="styles.css?v=20261121-buy-now-later">
 </head>
 <body>
   <header class="topbar">
@@ -143,6 +143,7 @@
         <button class="tab active" data-tab="outlook" type="button">手元のお金</button>
         <button class="tab" data-tab="compare" type="button">買う・借りるを比較</button>
         <button class="tab" data-tab="cashflow" type="button">毎年の家計</button>
+        <button class="tab" data-tab="timing" type="button">今買う・待つを比較</button>
       </nav>
 
       <section class="tab-panel active" id="outlook">
@@ -182,6 +183,44 @@
         <div class="explain-box neutral"><strong>※「家の価値」の考え方</strong><p>その年に家を売ったと仮定して、想定売却価格から売却費用と残りの住宅ローンを引いた金額です。実際の売却価格や売却時期を保証するものではありません。</p><p><b>ポイント：</b>手元のお金はすぐ使えますが、家の価値は売却して初めて現金になります。性質の違うお金なので、内訳もあわせて確認してください。</p></div>
       </section>
 
+      <section class="tab-panel" id="timing">
+        <div class="section-title"><div><h3>今買う？ それとも待ってから買う？</h3><p>待っている間の家賃、将来の物件価格・金利・月返済をまとめて比べます。</p></div></div>
+        <div class="timing-assumption-note">
+          <div><strong>過去データを参考にした初期値</strong><span>物件価格：年2.0％上昇／5年後の金利：現在より0.5ポイント上昇</span></div>
+          <button id="timingPresetButton" type="button">参考値に戻す</button>
+        </div>
+        <div class="timing-inputs">
+          <label class="field"><span>何年後に購入する？</span><div class="unit"><input id="waitYears" type="number" value="5" min="1" max="20"><b>年後</b></div></label>
+          <label class="field"><span>物件価格の年間変化率</span><div class="unit"><input id="futurePriceGrowth" type="number" value="2.0" min="-10" max="20" step="0.1"><b>％/年</b></div></label>
+          <label class="field"><span>待った後の住宅ローン金利</span><div class="unit"><input id="futureInterest" type="number" value="1.3" min="0" max="15" step="0.1"><b>％</b></div></label>
+          <label class="field"><span>待った後の返済期間</span><div class="unit"><input id="futureLoanYears" type="number" value="35" min="1" max="50"><b>年</b></div></label>
+          <label class="field"><span>待つ間の年間貯蓄</span><div class="unit"><input id="waitSavings" type="number" value="100" min="0" step="10"><b>万円/年</b></div></label>
+          <label class="field"><span>家賃の年間上昇率</span><div class="unit"><input id="waitRentGrowth" type="number" value="1.0" min="-5" max="10" step="0.1"><b>％/年</b></div></label>
+        </div>
+        <div class="timing-verdict" id="timingVerdict"></div>
+        <div class="timing-compare">
+          <article class="timing-now">
+            <span>今買った場合</span><strong id="timingNowPrice"></strong>
+            <dl><div><dt>毎月のローン返済</dt><dd id="timingNowPayment"></dd></div><div><dt id="timingNowEquityLabel">5年後の住宅資産</dt><dd id="timingNowEquity"></dd></div><div><dt>待つ間に払う家賃</dt><dd>0万円</dd></div></dl>
+          </article>
+          <div class="versus">比較</div>
+          <article class="timing-later">
+            <span id="timingLaterTitle">5年後に買う場合</span><strong id="timingLaterPrice"></strong>
+            <dl><div><dt>購入時の想定金利</dt><dd id="timingLaterRate"></dd></div><div><dt>購入後の毎月返済</dt><dd id="timingLaterPayment"></dd></div><div><dt>待つ間に払う家賃</dt><dd id="timingRentPaid"></dd></div></dl>
+          </article>
+        </div>
+        <div class="timing-impact">
+          <h4>待つことで変わる金額</h4>
+          <div class="timing-impact-grid">
+            <article><span>物件価格</span><strong id="timingPriceDiff"></strong><small id="timingPriceDiffNote"></small></article>
+            <article><span>借入額</span><strong id="timingLoanDiff"></strong><small>待つ間の貯蓄を頭金に追加した場合</small></article>
+            <article><span>月々の返済</span><strong id="timingPaymentDiff"></strong><small>購入後のローン返済額の差</small></article>
+            <article><span>待つ間の家賃総額</span><strong id="timingRentImpact"></strong><small>支払っても住宅資産にはならない金額</small></article>
+          </div>
+        </div>
+        <div class="explain-box neutral timing-source"><strong>初期値の考え方</strong><p>国土交通省「不動産価格指数」と住宅金融支援機構「フラット35金利推移」の過去データを参考にした比較用の仮定です。将来の価格・金利を予測または保証するものではありません。地域・物件・金融機関に合わせて数値を自由に変更してください。</p><p><a href="https://www.mlit.go.jp/totikensangyo/totikensangyo_tk5_000085.html" target="_blank" rel="noopener">国土交通省の不動産価格指数</a>　<a href="https://www.flat35.com/kinri/kinri_suii.html" target="_blank" rel="noopener">フラット35の金利推移</a></p></div>
+      </section>
+
       <section class="tab-panel" id="cashflow">
         <div class="section-title"><div><h3>生涯キャッシュフロー</h3><p>各年の収入・支出と期末金融資産を確認できます。</p></div></div>
         <div class="table-wrap"><table><thead><tr><th>年齢</th><th>手取り・年金</th><th>生活・旅行</th><th>子育て・教育の時期</th><th>子育て・教育費</th><th>購入の住居費</th><th>年間収支</th><th>期末金融資産</th></tr></thead><tbody id="cashflowTable"></tbody></table></div>
@@ -192,6 +231,6 @@
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=20261121-future-children-2"></script>
+  <script src="app.js?v=20261121-buy-now-later"></script>
 </body>
 </html>
