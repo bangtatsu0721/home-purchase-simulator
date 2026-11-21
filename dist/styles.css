@@ -54,6 +54,7 @@
 .plain-guide span:before{content:"";display:inline-block;width:18px;height:3px;margin-right:7px;vertical-align:middle;border-radius:3px}
 .guide-cash:before{background:#2f75b5}.guide-rent:before{background:#7f8fa6}
 .table-heading{margin:19px 0 9px;color:var(--navy);font-size:.9rem}
+.rent-cashflow-heading{margin:24px 0 9px}.rent-cashflow-heading h4{margin:0;color:var(--navy);font-size:.98rem}.rent-cashflow-heading p{margin:4px 0 0;color:var(--muted);font-size:.76rem}.rent-cashflow-wrap{margin-top:0}.rent-cashflow-note{margin-top:12px}
 .positive{color:var(--green)!important;font-weight:800}
 .drawdown{color:#2f75b5!important;font-weight:800}
 .cashflow-note{display:flex;gap:12px;align-items:flex-start;margin:14px 0 0;padding:11px 13px;border-left:4px solid var(--blue);border-radius:6px;background:#f1f7fb;color:var(--navy);font-size:.78rem;line-height:1.6}.cashflow-note strong{flex:0 0 auto}.cashflow-note span{color:#536276}
