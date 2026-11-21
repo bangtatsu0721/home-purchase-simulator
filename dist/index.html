@@ -6,7 +6,7 @@
   <meta name="description" content="住宅購入と賃貸継続を、生涯収支と総資産から比較するシミュレーター">
   <title>住宅購入安心度シミュレーター</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317365d'/%3E%3Cpath d='M13 31 32 15l19 16v21H38V38H26v14H13Z' fill='%23fff'/%3E%3Cpath d='M45 20v-6h6v11Z' fill='%239ac7aa'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261118-consumer">
+  <link rel="stylesheet" href="styles.css?v=20261121-future-children">
 </head>
 <body>
   <header class="topbar">
@@ -57,11 +57,24 @@
 
       <details>
         <summary>お子さま・教育</summary>
-        <div class="form-grid">
-          <label class="field"><span>第1子の現在年齢（-1＝なし）</span><div class="unit"><input id="child1" type="number" value="-1" min="-1" max="25"><b>歳</b></div></label>
-          <label class="field"><span>第2子の現在年齢（-1＝なし）</span><div class="unit"><input id="child2" type="number" value="-1" min="-1" max="25"><b>歳</b></div></label>
+        <div class="child-settings">
+          <fieldset class="child-card">
+            <legend>第1子</legend>
+            <label class="field wide"><span>現在・将来の予定</span><select id="child1Mode"><option value="none">予定なし</option><option value="current">現在いる</option><option value="future">将来予定している</option></select></label>
+            <label class="field child-current-field" data-child="1"><span>現在の年齢</span><div class="unit"><input id="child1" type="number" value="0" min="0" max="25"><b>歳</b></div></label>
+            <label class="field child-future-field" data-child="1"><span>何年後に生まれる予定？</span><div class="unit"><input id="child1BirthIn" type="number" value="3" min="0" max="30"><b>年後</b></div></label>
+          </fieldset>
+          <fieldset class="child-card">
+            <legend>第2子</legend>
+            <label class="field wide"><span>現在・将来の予定</span><select id="child2Mode"><option value="none">予定なし</option><option value="current">現在いる</option><option value="future">将来予定している</option></select></label>
+            <label class="field child-current-field" data-child="2"><span>現在の年齢</span><div class="unit"><input id="child2" type="number" value="0" min="0" max="25"><b>歳</b></div></label>
+            <label class="field child-future-field" data-child="2"><span>何年後に生まれる予定？</span><div class="unit"><input id="child2BirthIn" type="number" value="5" min="0" max="30"><b>年後</b></div></label>
+          </fieldset>
+        </div>
+        <div class="form-grid education-plan-row">
           <label class="field wide"><span>教育プラン</span><select id="education"><option value="public">公立中心</option><option value="university">大学のみ私立</option><option value="high">高校から私立</option><option value="middle">中学から私立</option></select></label>
         </div>
+        <div class="education-schedule" id="educationSchedule" aria-live="polite"></div>
       </details>
 
       <details>
@@ -171,7 +184,7 @@
 
       <section class="tab-panel" id="cashflow">
         <div class="section-title"><div><h3>生涯キャッシュフロー</h3><p>各年の収入・支出と期末金融資産を確認できます。</p></div></div>
-        <div class="table-wrap"><table><thead><tr><th>年齢</th><th>手取り・年金</th><th>生活・旅行</th><th>教育費</th><th>購入の住居費</th><th>年間収支</th><th>期末金融資産</th></tr></thead><tbody id="cashflowTable"></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>年齢</th><th>手取り・年金</th><th>生活・旅行</th><th>子育て・教育の時期</th><th>子育て・教育費</th><th>購入の住居費</th><th>年間収支</th><th>期末金融資産</th></tr></thead><tbody id="cashflowTable"></tbody></table></div>
       </section>
 
       <footer class="disclaimer">本試算は入力条件に基づく概算です。融資承認、税額、将来の収支、住宅の売却価格を保証するものではありません。</footer>
@@ -179,6 +192,6 @@
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=20261118-consumer"></script>
+  <script src="app.js?v=20261121-future-children"></script>
 </body>
 </html>
