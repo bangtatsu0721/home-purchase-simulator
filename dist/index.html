@@ -201,7 +201,7 @@
       <section class="tab-panel" id="timing">
         <div class="section-title"><div><h3>今買う？ それとも待ってから買う？</h3><p>待っている間の家賃、将来の物件価格・金利・月返済をまとめて比べます。</p></div></div>
         <div class="timing-assumption-note">
-          <div><strong>過去データを参考にした初期値</strong><span>物件価格：年2.0％上昇／5年後の金利：現在より0.5ポイント上昇</span></div>
+          <div><strong>過去データを参考にした初期値</strong><span id="timingReferenceSummary">5年後の参考値：物件価格 年2.0％上昇／金利 現在より0.5ポイント上昇</span></div>
           <button id="timingPresetButton" type="button">参考値に戻す</button>
         </div>
         <div class="timing-inputs">
@@ -216,7 +216,7 @@
         <div class="timing-compare">
           <article class="timing-now">
             <span>今買った場合</span><strong id="timingNowPrice"></strong>
-            <dl><div><dt>毎月のローン返済</dt><dd id="timingNowPayment"></dd></div><div><dt id="timingNowEquityLabel">5年後の住宅資産</dt><dd id="timingNowEquity"></dd></div><div><dt>待つ間に払う家賃</dt><dd>0万円</dd></div></dl>
+            <dl><div><dt>毎月のローン返済</dt><dd id="timingNowPayment"></dd></div><div><dt id="timingNowEquityLabel">5年後に売却した場合の手残り想定額</dt><dd id="timingNowEquity"></dd></div><div><dt>待つ間に払う家賃</dt><dd>0万円</dd></div></dl>
           </article>
           <div class="versus">比較</div>
           <article class="timing-later">
@@ -233,7 +233,7 @@
             <article><span>待つ間の家賃総額</span><strong id="timingRentImpact"></strong><small>支払っても住宅資産にはならない金額</small></article>
           </div>
         </div>
-        <div class="explain-box neutral timing-source"><strong>初期値の考え方</strong><p>国土交通省「不動産価格指数」と住宅金融支援機構「フラット35金利推移」の過去データを参考にした比較用の仮定です。将来の価格・金利を予測または保証するものではありません。地域・物件・金融機関に合わせて数値を自由に変更してください。</p><p><a href="https://www.mlit.go.jp/totikensangyo/totikensangyo_tk5_000085.html" target="_blank" rel="noopener">国土交通省の不動産価格指数</a>　<a href="https://www.flat35.com/kinri/kinri_suii.html" target="_blank" rel="noopener">フラット35の金利推移</a></p></div>
+        <div class="explain-box neutral timing-source"><strong>初期値の考え方</strong><p>国土交通省「不動産価格指数」と住宅金融支援機構「フラット35金利推移」の過去データを参考にした比較用の仮定です。待つ年数を増やすと、物件価格の年間変化率と将来金利の参考値も段階的に上がります。将来の価格・金利を予測または保証するものではありません。地域・物件・金融機関に合わせて数値を自由に変更してください。</p><p>「売却した場合の手残り想定額」は、想定売却価格から売却費用とその時点のローン残高を差し引いた金額です。利益や預貯金額を示すものではありません。</p><p><a href="https://www.mlit.go.jp/totikensangyo/totikensangyo_tk5_000085.html" target="_blank" rel="noopener">国土交通省の不動産価格指数</a>　<a href="https://www.flat35.com/kinri/kinri_suii.html" target="_blank" rel="noopener">フラット35の金利推移</a></p></div>
       </section>
 
       <section class="tab-panel" id="cashflow">
@@ -247,6 +247,6 @@
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=20261121-loan-judgement"></script>
+  <script src="app.js?v=20261121-timing-linked"></script>
 </body>
 </html>
